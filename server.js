@@ -192,6 +192,16 @@ function removeMemberFromAllRooms(socketId, skipRoomId = null) {
 
     removeVoiceUser(socketId, roomId);
 
+    if (room.screenSharerId === socketId) {
+      const member = getMember(room, socketId);
+      room.screenSharerId = "";
+      room.screenSharerNick = "";
+      io.to(roomId).emit("screen-share-stopped", {
+        id: socketId,
+        nick: member ? member.nick : "Jogador"
+      });
+    }
+
     const before = room.members.length;
     room.members = room.members.filter((member) => member.id !== socketId);
 
@@ -274,6 +284,18 @@ function joinRoom(socket, { roomId, nick, password }) {
     message: `${cleanNick} entrou na sala.`
   });
 
+  if (room.screenSharerId && room.screenSharerId !== socket.id) {
+    socket.emit("screen-share-available", {
+      id: room.screenSharerId,
+      nick: room.screenSharerNick || "Jogador"
+    });
+
+    io.to(room.screenSharerId).emit("screen-viewer-joined", {
+      id: socket.id,
+      nick: cleanNick
+    });
+  }
+
   sendMembers(roomId);
   sendRooms();
   emitAdminRooms();
@@ -284,6 +306,15 @@ function leaveRoom(socket, roomId, nick) {
   if (!room) return;
 
   removeVoiceUser(socket.id, roomId);
+
+  if (room.screenSharerId === socket.id) {
+    room.screenSharerId = "";
+    room.screenSharerNick = "";
+    io.to(roomId).emit("screen-share-stopped", {
+      id: socket.id,
+      nick: getSocketName(socket, nick)
+    });
+  }
 
   socket.leave(roomId);
 
@@ -332,6 +363,13 @@ function closeRoomByAdmin(socket, roomId) {
     message: "Essa sala foi fechada por um ADM."
   });
 
+  if (room.screenSharerId) {
+    io.to(roomId).emit("screen-share-stopped", {
+      id: room.screenSharerId,
+      nick: room.screenSharerNick || "Jogador"
+    });
+  }
+
   io.to(roomId).emit("room-closed", {
     roomId,
     name: room.name
@@ -354,6 +392,28 @@ function closeRoomByAdmin(socket, roomId) {
     ok: true,
     message: "Sala fechada com sucesso."
   });
+}
+
+
+function relayScreen(socket, eventName, { roomId, to, offer, answer, candidate }) {
+  const room = rooms.get(roomId);
+  if (!room) return;
+
+  const fromMember = getMember(room, socket.id);
+  const toMember = getMember(room, to);
+
+  if (!fromMember || !toMember) return;
+
+  const payload = {
+    from: socket.id,
+    nick: fromMember.nick
+  };
+
+  if (offer) payload.offer = offer;
+  if (answer) payload.answer = answer;
+  if (candidate) payload.candidate = candidate;
+
+  io.to(to).emit(eventName, payload);
 }
 
 function relayVoice(socket, eventName, { roomId, to, offer, answer, candidate }) {
@@ -442,6 +502,8 @@ io.on("connection", (socket) => {
       members: [],
       messages: [],
       voiceUsers: new Set(),
+      screenSharerId: "",
+      screenSharerNick: "",
       createdAt: Date.now()
     };
 
@@ -555,6 +617,66 @@ io.on("connection", (socket) => {
 
   socket.on("admin-close-room", ({ roomId }) => {
     closeRoomByAdmin(socket, roomId);
+  });
+
+
+  socket.on("screen-share-start", ({ roomId, nick }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const member = getMember(room, socket.id);
+    if (!member) return;
+
+    if (room.screenSharerId && room.screenSharerId !== socket.id) {
+      socket.emit("admin-action-result", {
+        ok: false,
+        message: "Já existe alguém espelhando a tela nessa sala."
+      });
+      return;
+    }
+
+    room.screenSharerId = socket.id;
+    room.screenSharerNick = nick || member.nick;
+
+    const viewers = room.members
+      .filter((memberItem) => memberItem.id !== socket.id)
+      .map((memberItem) => ({
+        id: memberItem.id,
+        nick: memberItem.nick
+      }));
+
+    socket.emit("screen-viewers", { viewers });
+
+    socket.to(roomId).emit("screen-share-started", {
+      id: socket.id,
+      nick: nick || member.nick
+    });
+  });
+
+  socket.on("screen-share-stop", ({ roomId, nick }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+    if (room.screenSharerId !== socket.id) return;
+
+    room.screenSharerId = "";
+    room.screenSharerNick = "";
+
+    socket.to(roomId).emit("screen-share-stopped", {
+      id: socket.id,
+      nick: nick || "Jogador"
+    });
+  });
+
+  socket.on("screen-offer", (data) => {
+    relayScreen(socket, "screen-offer", data);
+  });
+
+  socket.on("screen-answer", (data) => {
+    relayScreen(socket, "screen-answer", data);
+  });
+
+  socket.on("screen-ice", (data) => {
+    relayScreen(socket, "screen-ice", data);
   });
 
   socket.on("voice-join", ({ roomId, nick }) => {

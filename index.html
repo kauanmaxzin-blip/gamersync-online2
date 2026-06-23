@@ -1339,6 +1339,21 @@
             }
         }
 
+    
+        /* Sistema de espelhar tela */
+        .screen-share-box{display:none;position:relative;z-index:15;margin:.9rem 1rem 0;border:1px solid rgba(220,38,38,.45);background:rgba(8,8,8,.96);border-radius:1rem;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55)}
+        .screen-share-box.active{display:block}
+        .screen-share-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.75rem .85rem;border-bottom:1px solid rgba(38,38,38,.9);background:linear-gradient(90deg,rgba(220,38,38,.18),rgba(10,10,10,.96))}
+        .screen-share-title{color:#fff;font-weight:900;font-size:.9rem;line-height:1.15}.screen-share-subtitle{color:#a3a3a3;font-size:.72rem;margin-top:.15rem}
+        .screen-share-actions{display:flex;align-items:center;gap:.45rem}.screen-share-action-btn{min-width:2.35rem;height:2.35rem;border-radius:.75rem;background:rgba(23,23,23,.95);border:1px solid rgba(64,64,64,.9);color:white;display:inline-flex;align-items:center;justify-content:center;transition:.18s ease}
+        .screen-share-action-btn:hover,.screen-share-action-btn:active{background:#dc2626;border-color:#ef4444}
+        .screen-share-video-wrap{background:#020202;min-height:12rem;max-height:42vh;display:grid;place-items:center}
+        #screen-share-video{width:100%;max-height:42vh;object-fit:contain;background:#000;display:block}.screen-share-placeholder{padding:1.2rem;color:#a3a3a3;text-align:center;font-size:.9rem}
+        .screen-share-live-dot{width:.55rem;height:.55rem;border-radius:999px;background:#ef4444;box-shadow:0 0 12px rgba(239,68,68,.8);display:inline-block;margin-right:.4rem;animation:liveDotPulse 1s ease-in-out infinite}
+        @keyframes liveDotPulse{0%,100%{transform:scale(.9);opacity:.65}50%{transform:scale(1.16);opacity:1}}
+        .screen-share-active-btn{background:#dc2626!important;border-color:#ef4444!important;color:#fff!important;box-shadow:0 0 26px rgba(220,38,38,.35)}
+        @media(max-width:767px){.screen-share-box{margin:.7rem .75rem 0}.screen-share-video-wrap{min-height:10rem;max-height:34vh}#screen-share-video{max-height:34vh}}
+
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex flex-col">
@@ -1772,6 +1787,26 @@
                 </div>
             </div>
 
+
+            <div id="screen-share-box" class="screen-share-box">
+                <div class="screen-share-header">
+                    <div class="min-w-0">
+                        <p id="screen-share-title" class="screen-share-title"><span class="screen-share-live-dot"></span>Tela compartilhada</p>
+                        <p id="screen-share-subtitle" class="screen-share-subtitle">Aguardando transmissão...</p>
+                    </div>
+                    <div class="screen-share-actions">
+                        <button type="button" onclick="expandScreenShare()" class="screen-share-action-btn" title="Abrir tela maior" aria-label="Abrir tela maior"><i data-lucide="maximize-2" class="w-4 h-4"></i></button>
+                        <button type="button" onclick="stopScreenShare()" id="screen-share-stop-btn" class="screen-share-action-btn hidden" title="Parar compartilhamento" aria-label="Parar compartilhamento"><i data-lucide="square" class="w-4 h-4"></i></button>
+                        <button type="button" onclick="hideScreenShareBox()" class="screen-share-action-btn" title="Esconder tela" aria-label="Esconder tela"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+                <div class="screen-share-video-wrap">
+                    <video id="screen-share-video" autoplay playsinline muted></video>
+                    <div id="screen-share-placeholder" class="screen-share-placeholder">Quando alguém compartilhar a tela, ela aparece aqui.</div>
+                </div>
+            </div>
+
+
             <!-- Background Watermark -->
             <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
                 <i data-lucide="gamepad-2" class="w-64 h-64 text-white"></i>
@@ -1812,6 +1847,12 @@
                         <i data-lucide="mic" class="w-5 h-5"></i>
                         <span>Microfone</span>
                     </button>
+
+                    <button type="button" onclick="toggleScreenShare()" id="screen-share-btn" class="chat-action-btn" title="Espelhar tela">
+                        <i data-lucide="screen-share" class="w-5 h-5"></i>
+                        <span>Tela</span>
+                    </button>
+
                     <button type="button" class="chat-action-btn" title="Fone de ouvido">
                         <i data-lucide="headphones" class="w-5 h-5"></i>
                         <span>Fone</span>
@@ -1966,6 +2007,7 @@
         socket.on('disconnect', () => {
             updateConnectionStatus('Servidor desconectado');
             stopVoiceChat(false);
+            stopScreenShare(false);
         });
 
         socket.on('rooms-list', (rooms) => {
@@ -1985,6 +2027,7 @@
 
         socket.on('joined-room', (room) => {
             if (voiceEnabled) stopVoiceChat(false);
+            if (screenSharing) stopScreenShare(false);
             currentRoomId = room.id;
             currentRoomName = room.name;
             currentRoomType = room.type;
@@ -2036,6 +2079,76 @@
                 addSystemMessage('Histórico recente carregado.');
             } else {
                 addSystemMessage('Nenhuma mensagem antiga nesta sala.');
+            }
+        });
+
+
+        socket.on('screen-viewers', async (data) => {
+            if (!screenSharing) return;
+            const viewers = data.viewers || [];
+            for (const viewer of viewers) await callScreenViewer(viewer.id, viewer.nick);
+        });
+
+        socket.on('screen-viewer-joined', async (viewer) => {
+            if (!screenSharing) return;
+            setTimeout(() => callScreenViewer(viewer.id, viewer.nick), 500);
+        });
+
+        socket.on('screen-share-started', (data) => {
+            if (data.id === socket.id) return;
+            activeScreenSharerId = data.id;
+            activeScreenSharerNick = data.nick || 'Jogador';
+            showScreenShareBox({
+                title: `${activeScreenSharerNick} está espelhando a tela`,
+                subtitle: 'Conectando à tela...'
+            });
+            addSystemMessage(`${activeScreenSharerNick} começou a espelhar a tela.`);
+        });
+
+        socket.on('screen-share-available', (data) => {
+            if (!data || data.id === socket.id) return;
+            activeScreenSharerId = data.id;
+            activeScreenSharerNick = data.nick || 'Jogador';
+            showScreenShareBox({
+                title: `${activeScreenSharerNick} está espelhando a tela`,
+                subtitle: 'Aguarde, conectando à tela...'
+            });
+        });
+
+        socket.on('screen-share-stopped', (data) => {
+            closeScreenPeer(data.id);
+            if (activeScreenSharerId === data.id || !data.id) {
+                activeScreenSharerId = '';
+                activeScreenSharerNick = '';
+                resetScreenShareBox();
+            }
+            addSystemMessage(`${data.nick || 'Um jogador'} parou de espelhar a tela.`);
+        });
+
+        socket.on('screen-offer', async ({ from, nick, offer }) => {
+            if (screenSharing) return;
+            const pc = createScreenPeer(from, nick || 'Jogador');
+            await pc.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            socket.emit('screen-answer', { roomId: currentRoomId, to: from, answer });
+        });
+
+        socket.on('screen-answer', async ({ from, answer }) => {
+            const pc = screenPeers.get(from);
+            if (!pc) return;
+            if (pc.signalingState !== 'stable') {
+                await pc.setRemoteDescription(new RTCSessionDescription(answer));
+            }
+        });
+
+        socket.on('screen-ice', async ({ from, candidate }) => {
+            const pc = screenPeers.get(from);
+            if (!pc || !candidate) return;
+            try {
+                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (error) {
+                console.warn('Erro ao adicionar ICE da tela:', error);
             }
         });
 
@@ -3062,6 +3175,10 @@
                     stopVoiceChat(false);
                 }
 
+                if (screenSharing) {
+                    stopScreenShare(false);
+                }
+
                 if (currentRoomId) {
                     socket.emit('leave-room', { roomId: currentRoomId, nick: myNick });
                     currentRoomId = '';
@@ -3076,6 +3193,226 @@
         // Sistema de adicionar amigos
         function addFriend(name) {
             showToast(`Pedido de amizade enviado para ${name}!`, 'success');
+        }
+
+
+
+        // ===============================
+        // SISTEMA DE ESPELHAR TELA
+        // ===============================
+        const screenRTCConfig = voiceRTCConfig;
+
+        function setScreenShareButton(active) {
+            const btn = document.getElementById('screen-share-btn');
+            const stopBtn = document.getElementById('screen-share-stop-btn');
+            if (btn) {
+                btn.classList.toggle('screen-share-active-btn', !!active);
+                btn.title = active ? 'Parar espelhamento' : 'Espelhar tela';
+            }
+            if (stopBtn) stopBtn.classList.toggle('hidden', !active);
+        }
+
+        function showScreenShareBox({ title = 'Tela compartilhada', subtitle = 'Transmitindo...' } = {}) {
+            const box = document.getElementById('screen-share-box');
+            const titleEl = document.getElementById('screen-share-title');
+            const subtitleEl = document.getElementById('screen-share-subtitle');
+            const placeholder = document.getElementById('screen-share-placeholder');
+            if (box) box.classList.add('active');
+            if (titleEl) titleEl.innerHTML = `<span class="screen-share-live-dot"></span>${escapeHTML(title)}`;
+            if (subtitleEl) subtitleEl.innerText = subtitle;
+            if (placeholder) placeholder.style.display = 'none';
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function hideScreenShareBox() {
+            const box = document.getElementById('screen-share-box');
+            if (box) box.classList.remove('active');
+        }
+
+        function resetScreenShareBox() {
+            const video = document.getElementById('screen-share-video');
+            const placeholder = document.getElementById('screen-share-placeholder');
+            const titleEl = document.getElementById('screen-share-title');
+            const subtitleEl = document.getElementById('screen-share-subtitle');
+            if (video) {
+                video.pause();
+                video.srcObject = null;
+            }
+            if (placeholder) placeholder.style.display = 'block';
+            if (titleEl) titleEl.innerHTML = '<span class="screen-share-live-dot"></span>Tela compartilhada';
+            if (subtitleEl) subtitleEl.innerText = 'Aguardando transmissão...';
+            setScreenShareButton(false);
+        }
+
+        async function expandScreenShare() {
+            const video = document.getElementById('screen-share-video');
+            if (!video || !video.srcObject) {
+                showToast('Nenhuma tela compartilhada agora.', 'info');
+                return;
+            }
+            try {
+                if (video.requestFullscreen) await video.requestFullscreen();
+                else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
+                else showToast('Seu navegador não abriu tela cheia.', 'info');
+            } catch (error) {
+                console.warn(error);
+            }
+        }
+
+        async function toggleScreenShare() {
+            if (screenSharingConnecting) return;
+            if (screenSharing) stopScreenShare(true);
+            else await startScreenShare();
+        }
+
+        async function startScreenShare() {
+            if (!currentRoomId) {
+                showToast('Entre em uma sala primeiro.', 'error');
+                return;
+            }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                showToast('Seu navegador não liberou espelhamento de tela.', 'error');
+                return;
+            }
+            screenSharingConnecting = true;
+            setScreenShareButton(true);
+            try {
+                localScreenStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { frameRate: 24 },
+                    audio: false
+                });
+                screenSharing = true;
+                screenSharingConnecting = false;
+                activeScreenSharerId = socket.id;
+                activeScreenSharerNick = myNick;
+
+                const video = document.getElementById('screen-share-video');
+                if (video) {
+                    video.muted = true;
+                    video.srcObject = localScreenStream;
+                    video.play().catch(() => {});
+                }
+
+                showScreenShareBox({
+                    title: 'Você está espelhando a tela',
+                    subtitle: 'Todos na sala podem ver enquanto estiver ligado.'
+                });
+
+                localScreenStream.getTracks().forEach((track) => {
+                    track.onended = () => {
+                        if (screenSharing) stopScreenShare(true);
+                    };
+                });
+
+                socket.emit('screen-share-start', { roomId: currentRoomId, nick: myNick });
+                showToast('Espelhamento de tela ativado.', 'success');
+                addSystemMessage(`${myNick} começou a espelhar a tela.`);
+            } catch (error) {
+                console.error(error);
+                screenSharing = false;
+                screenSharingConnecting = false;
+                localScreenStream = null;
+                activeScreenSharerId = '';
+                activeScreenSharerNick = '';
+                setScreenShareButton(false);
+                showToast('Não foi possível espelhar a tela.', 'error');
+            }
+        }
+
+        function stopScreenShare(showMessage = true) {
+            const oldRoomId = currentRoomId;
+            screenSharing = false;
+            screenSharingConnecting = false;
+
+            for (const peerId of Array.from(screenPeers.keys())) closeScreenPeer(peerId);
+
+            if (localScreenStream) {
+                localScreenStream.getTracks().forEach((track) => track.stop());
+                localScreenStream = null;
+            }
+
+            activeScreenSharerId = '';
+            activeScreenSharerNick = '';
+            resetScreenShareBox();
+
+            if (oldRoomId) socket.emit('screen-share-stop', { roomId: oldRoomId, nick: myNick });
+
+            if (showMessage) {
+                showToast('Espelhamento encerrado.', 'info');
+                addSystemMessage(`${myNick} parou de espelhar a tela.`);
+            }
+        }
+
+        function createScreenPeer(peerId, nick = 'Jogador') {
+            if (screenPeers.has(peerId)) return screenPeers.get(peerId);
+
+            const pc = new RTCPeerConnection(screenRTCConfig);
+
+            if (localScreenStream) {
+                localScreenStream.getTracks().forEach((track) => pc.addTrack(track, localScreenStream));
+            }
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('screen-ice', { roomId: currentRoomId, to: peerId, candidate: event.candidate });
+                }
+            };
+
+            pc.ontrack = (event) => {
+                const stream = event.streams[0];
+                remoteScreenStreams.set(peerId, stream);
+                activeScreenSharerId = peerId;
+                activeScreenSharerNick = nick;
+
+                const video = document.getElementById('screen-share-video');
+                if (video) {
+                    video.muted = false;
+                    video.srcObject = stream;
+                    video.play().catch(() => console.log('O navegador vai liberar o vídeo depois de um toque na tela.'));
+                }
+
+                showScreenShareBox({
+                    title: `${nick || 'Um jogador'} está espelhando a tela`,
+                    subtitle: 'Tela ao vivo da sala.'
+                });
+            };
+
+            pc.onconnectionstatechange = () => {
+                if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) {
+                    setTimeout(() => closeScreenPeer(peerId), 800);
+                }
+            };
+
+            screenPeers.set(peerId, pc);
+            return pc;
+        }
+
+        async function callScreenViewer(peerId, nick = 'Jogador') {
+            if (!screenSharing || !localScreenStream || peerId === socket.id) return;
+            const pc = createScreenPeer(peerId, nick);
+            const offer = await pc.createOffer({ offerToReceiveVideo: true });
+            await pc.setLocalDescription(offer);
+            socket.emit('screen-offer', { roomId: currentRoomId, to: peerId, offer });
+        }
+
+        function closeScreenPeer(peerId) {
+            const pc = screenPeers.get(peerId);
+            if (pc) {
+                pc.close();
+                screenPeers.delete(peerId);
+            }
+
+            const stream = remoteScreenStreams.get(peerId);
+            if (stream) {
+                stream.getTracks().forEach((track) => track.stop());
+                remoteScreenStreams.delete(peerId);
+            }
+
+            if (activeScreenSharerId === peerId) {
+                activeScreenSharerId = '';
+                activeScreenSharerNick = '';
+                resetScreenShareBox();
+            }
         }
 
 
@@ -3100,6 +3437,14 @@
         const voiceReconnectTimers = new Map();
         let lastLocalSpeakingState = false;
         let lastLocalSpeakingEmit = 0;
+
+        let localScreenStream = null;
+        let screenSharing = false;
+        let screenSharingConnecting = false;
+        let activeScreenSharerId = '';
+        let activeScreenSharerNick = '';
+        const screenPeers = new Map();
+        const remoteScreenStreams = new Map();
 
         function getPlayerAvatarUrl(member) {
             const baseColor = member && member.id === socket.id ? 'dc2626' : '222';

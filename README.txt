@@ -1,12 +1,17 @@
-GamerSync - Microfone e bolinha mais estáveis
+GamerSync - Sistema de espelhar tela
 
-Correções:
-- trava contra clique duplo no botão do microfone
-- se o microfone falhar, o botão volta ao normal
-- se a conexão de voz cair, tenta reconectar
-- bolinha de fala agora recebe sinal pelo servidor
-- ao sair/desligar o mic, o efeito da bolinha limpa
-- ao voltar para a aba, o app ressincroniza a voz
+Novidades:
+- botão Tela no chat
+- jogador pode espelhar/compartilhar tela dentro da sala
+- outros jogadores da mesma sala recebem a tela ao vivo
+- quem entra depois recebe o aviso e conecta à tela
+- botão para parar o compartilhamento
+- sair da sala encerra o compartilhamento
+
+Importante:
+- o navegador precisa permitir compartilhamento de tela
+- alguns celulares/navegadores podem não liberar getDisplayMedia
+- funciona melhor em HTTPS, como o link do Render
 
 Substitua no GitHub:
 - index.html

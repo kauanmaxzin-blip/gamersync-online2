@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "3.7.0",
-  "description": "GamerSync com microfone e bolinha de voz mais estáveis",
+  "version": "3.8.0",
+  "description": "GamerSync com espelhamento de tela por sala",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
