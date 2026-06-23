@@ -66,13 +66,12 @@ initFirebaseAdmin();
 /*
   ADM ESCOLHIDO POR CONTA GOOGLE/FIREBASE
 
-  Coloque aqui o EMAIL Google das contas que podem virar ADM.
-  Exemplo:
-  "seuemail@gmail.com": "adm123"
+  Coloque aqui o EMAIL Google das contas que podem ser ADM.
+  Não precisa de código. Se o email estiver na lista, vira ADM automático.
 */
-const ADMIN_EMAIL_CODES = {
-  "seuemail@gmail.com": "adm123"
-};
+const ADMIN_EMAILS = [
+  "kauanmaxzin@gmail.com"
+];
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static(__dirname));
@@ -133,6 +132,24 @@ function sendMembers(roomId) {
 
 function adminRooms() {
   return Array.from(rooms.values()).map(publicRoom);
+}
+
+
+function updateAdminStatusFromAccount(socket) {
+  const email = String(socket.data?.account?.email || "").toLowerCase();
+  const isAdmin = ADMIN_EMAILS.map((item) => String(item).toLowerCase()).includes(email);
+
+  socket.data.isAdmin = isAdmin;
+  socket.data.adminEmail = isAdmin ? email : "";
+
+  socket.emit("admin-status", {
+    isAdmin,
+    email
+  });
+
+  if (isAdmin) {
+    socket.emit("admin-rooms-list", adminRooms());
+  }
 }
 
 function emitAdminRooms() {
@@ -368,6 +385,8 @@ io.on("connection", (socket) => {
       socket.emit("google-account-ok", {
         account: socket.data.account
       });
+
+      updateAdminStatusFromAccount(socket);
     } catch (error) {
       console.error("Token Firebase inválido:", error.message);
       socket.emit("google-account-error", {
@@ -463,39 +482,8 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("admin-login", ({ code }) => {
-    const account = socket.data && socket.data.account;
-
-    if (!account || !account.email) {
-      socket.data.isAdmin = false;
-      socket.emit("admin-status", {
-        isAdmin: false,
-        message: "Entre com Google/Firebase antes de ativar o ADM."
-      });
-      return;
-    }
-
-    const email = String(account.email).toLowerCase();
-    const expectedCode = ADMIN_EMAIL_CODES[email];
-
-    if (!expectedCode || expectedCode !== String(code || "").trim()) {
-      socket.data.isAdmin = false;
-      socket.emit("admin-status", {
-        isAdmin: false,
-        message: "Email Google ou código ADM inválido."
-      });
-      return;
-    }
-
-    socket.data.isAdmin = true;
-    socket.data.adminEmail = email;
-
-    socket.emit("admin-status", {
-      isAdmin: true,
-      email
-    });
-
-    socket.emit("admin-rooms-list", adminRooms());
+  socket.on("admin-login", () => {
+    updateAdminStatusFromAccount(socket);
   });
 
   socket.on("admin-logout", () => {

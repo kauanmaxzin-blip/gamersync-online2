@@ -1588,23 +1588,17 @@
             </div>
 
 
-            <div id="admin-login-card" class="admin-panel-card">
+            
+            <div id="admin-login-card" class="admin-panel-card hidden">
                 <div class="flex items-center justify-between gap-3 mb-3">
                     <div>
                         <h3 class="font-bold text-yellow-200">Área de ADM</h3>
-                        <p class="text-xs text-neutral-400">Somente usuários escolhidos com código ADM.</p>
+                        <p class="text-xs text-neutral-400">Acesso automático para Gmail escolhido.</p>
                     </div>
                     <span id="profile-admin-badge" class="admin-badge">ADM</span>
                 </div>
 
-                <div id="admin-login-box" class="space-y-3">
-                    <input id="admin-code-input" type="password" class="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500" placeholder="Código de ADM">
-                    <button onclick="loginAdmin()" class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg transition">
-                        Entrar como ADM
-                    </button>
-                </div>
-
-                <div id="admin-actions-box" class="hidden space-y-3">
+                <div id="admin-actions-box" class="space-y-3">
                     <button onclick="openAdminPanel()" class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg transition">
                         Abrir Painel ADM
                     </button>
@@ -1613,7 +1607,6 @@
                     </button>
                 </div>
             </div>
-
 
             <button onclick="logoutAccount()" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition flex items-center justify-center gap-2">
                 <i data-lucide="log-out" class="w-5 h-5"></i>
@@ -2416,14 +2409,8 @@
             }
         }
 
-
-
-
-
-
-
         // ===============================
-        // SISTEMA DE ADM ESCOLHIDO
+        // SISTEMA DE ADM POR GMAIL ESCOLHIDO
         // ===============================
         let isAdmin = false;
         let adminRoomsCache = [];
@@ -2433,10 +2420,7 @@
             updateAdminUI();
 
             if (isAdmin) {
-                showToast('Modo ADM ativado.', 'success');
                 socket.emit('admin-get-rooms');
-            } else if (data.message) {
-                showToast(data.message, 'error');
             }
         });
 
@@ -2463,18 +2447,7 @@
         });
 
         function loginAdmin() {
-            const code = document.getElementById('admin-code-input')?.value.trim();
-
-            if (!code) {
-                showToast('Digite o código de ADM.', 'error');
-                return;
-            }
-
-            getNickFromInputs();
-
-            socket.emit('admin-login', {
-                code
-            });
+            showToast('O ADM agora é automático pelo Gmail escolhido.', 'info');
         }
 
         function logoutAdmin() {
@@ -2488,15 +2461,13 @@
         function updateAdminUI() {
             const headerBadge = document.getElementById('admin-header-badge');
             const profileBadge = document.getElementById('profile-admin-badge');
-            const loginBox = document.getElementById('admin-login-box');
-            const actionsBox = document.getElementById('admin-actions-box');
+            const adminCard = document.getElementById('admin-login-card');
 
             [headerBadge, profileBadge].forEach((badge) => {
                 if (badge) badge.classList.toggle('active', isAdmin);
             });
 
-            if (loginBox) loginBox.classList.toggle('hidden', isAdmin);
-            if (actionsBox) actionsBox.classList.toggle('hidden', !isAdmin);
+            if (adminCard) adminCard.classList.toggle('hidden', !isAdmin);
 
             if (window.lucide) lucide.createIcons();
         }
@@ -2572,6 +2543,9 @@
 
             adminCloseRoom(currentRoomId);
         }
+
+
+
 
 
         // Ajuste extra para celular: quando o teclado abrir, mantém o campo de mensagem visível
