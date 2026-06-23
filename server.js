@@ -224,11 +224,11 @@ function joinRoom(socket, { roomId, nick, password }) {
 
   if (alreadyInThisRoom) {
     socket.emit("joined-room", publicRoom(room));
+
   socket.emit("room-history", {
     roomId,
     messages: room.messages || []
   });
-
     sendMembers(roomId);
     sendRooms();
     emitAdminRooms();
@@ -464,20 +464,14 @@ io.on("connection", (socket) => {
     const room = rooms.get(roomId);
 
     if (!room) {
-      socket.emit("room-history", {
-        roomId,
-        messages: []
-      });
+      socket.emit("room-history", { roomId, messages: [] });
       return;
     }
 
     const isMember = room.members.some((member) => member.id === socket.id);
 
     if (!isMember) {
-      socket.emit("room-history", {
-        roomId,
-        messages: []
-      });
+      socket.emit("room-history", { roomId, messages: [] });
       return;
     }
 
@@ -522,7 +516,6 @@ io.on("connection", (socket) => {
     if (!room.messages) room.messages = [];
     room.messages.push(message);
 
-    // Guarda as últimas 100 mensagens para quem entrar depois.
     if (room.messages.length > 100) {
       room.messages = room.messages.slice(-100);
     }
