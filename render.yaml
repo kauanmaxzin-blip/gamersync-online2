@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: gamersync-online
+    name: gamersync-online2
     env: node
     plan: free
     buildCommand: npm install

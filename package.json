@@ -1,16 +1,16 @@
 {
-  "name": "gamersync-servidor",
-  "version": "1.0.0",
-  "description": "Servidor em tempo real para o app GamerSync",
+  "name": "gamersync-online",
+  "version": "2.0.0",
+  "description": "GamerSync com salas reais separadas e chat por grupo",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "express": "^4.18.3",
     "socket.io": "^4.7.5"
-  },
-  "engines": {
-    "node": ">=18"
   }
 }

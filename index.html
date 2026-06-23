@@ -756,6 +756,101 @@
             }
         }
 
+
+        /* Sistema real de salas */
+        .rooms-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #262626;
+            padding-bottom: 0.8rem;
+        }
+
+        .rooms-empty {
+            border: 1px dashed rgba(220, 38, 38, .35);
+            background: rgba(23, 23, 23, .72);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            text-align: center;
+            color: #a3a3a3;
+        }
+
+        .room-card-real {
+            background: rgba(23, 23, 23, .9);
+            border: 1px solid #2f2f2f;
+            border-radius: 1rem;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            transition: .22s ease;
+        }
+
+        .room-card-real:hover {
+            transform: translateY(-2px);
+            border-color: #dc2626;
+            box-shadow: 0 0 24px rgba(220, 38, 38, .12);
+        }
+
+        .room-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .25rem .55rem;
+            border-radius: 999px;
+            font-size: .72rem;
+            font-weight: 800;
+            border: 1px solid rgba(220, 38, 38, .35);
+            color: #fca5a5;
+            background: rgba(220, 38, 38, .12);
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,.75);
+            backdrop-filter: blur(8px);
+            padding: 1rem;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .room-modal {
+            width: min(100%, 28rem);
+            border-radius: 1.25rem;
+            border: 1px solid rgba(220, 38, 38, .35);
+            background: rgba(15, 15, 15, .97);
+            box-shadow: 0 22px 70px rgba(0,0,0,.7);
+            padding: 1.25rem;
+            animation: screenSoftIn .32s var(--ease-gamer, ease);
+        }
+
+        @media (max-width: 767px) {
+            .rooms-toolbar {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .room-card-real {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .room-card-real button {
+                width: 100%;
+            }
+        }
+
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex flex-col">
@@ -996,58 +1091,61 @@
         </div>
 
         <div id="screen-game-detail-content" class="flex-1 overflow-y-auto p-6 max-w-5xl mx-auto w-full">
-            <div class="game-detail-grid grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Opção Criar Público -->
-                <div class="glass-card p-6 rounded-xl border-l-4 border-l-white hover:border-l-red-600 transition">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button onclick="openCreateRoomModal('public')" class="glass-card p-6 rounded-xl border-l-4 border-l-white hover:border-l-red-600 transition text-left">
                     <div class="w-12 h-12 bg-neutral-800 rounded-full flex items-center justify-center mb-4 text-white">
                         <i data-lucide="globe" class="w-6 h-6"></i>
                     </div>
-                    <h2 class="text-2xl font-bold mb-2">Criar Grupo Público</h2>
-                    <p class="text-neutral-400 mb-6 text-sm">Qualquer pessoa pode entrar. Capacidade máxima de 5 jogadores.</p>
-                    <button onclick="joinGroup('public')" class="w-full py-3 bg-white text-black font-bold rounded-lg hover:bg-neutral-200 transition">
-                        Criar e Entrar Agora
-                    </button>
-                </div>
+                    <h2 class="text-2xl font-bold mb-2">Criar Sala Pública</h2>
+                    <p class="text-neutral-400 text-sm">Crie uma sala real. Ela aparece para todos do mesmo jogo entrarem.</p>
+                </button>
 
-                <!-- Opção Criar Privado -->
-                <div class="glass-card p-6 rounded-xl border-l-4 border-l-red-600">
+                <button onclick="openCreateRoomModal('private')" class="glass-card p-6 rounded-xl border-l-4 border-l-red-600 transition text-left">
                     <div class="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center mb-4 text-red-600">
                         <i data-lucide="lock" class="w-6 h-6"></i>
                     </div>
-                    <h2 class="text-2xl font-bold mb-2">Criar Grupo Privado</h2>
-                    <p class="text-neutral-400 mb-4 text-sm">Protegido por senha. Apenas convidados podem entrar. (Máx 5)</p>
-                    
-                    <div class="space-y-3 mb-4">
-                        <input type="text" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-600 text-sm" placeholder="Nome do Grupo (Ex: Squad Pro)">
-                        <input type="password" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-600 text-sm" placeholder="Senha do Grupo">
-                    </div>
-
-                    <button onclick="joinGroup('private')" class="w-full py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition">
-                        Criar Grupo Privado
-                    </button>
-                </div>
+                    <h2 class="text-2xl font-bold mb-2">Criar Sala Privada</h2>
+                    <p class="text-neutral-400 text-sm">Crie uma sala com senha. Só entra quem souber a senha.</p>
+                </button>
             </div>
 
-            <div class="mt-10">
-                <h3 class="text-xl font-bold mb-4 border-b border-neutral-800 pb-2">Salas Públicas Abertas</h3>
-                <div class="space-y-3">
-                    <!-- Sala Mockada 1 -->
-                    <div class="room-list-item bg-neutral-900 p-4 rounded-lg flex justify-between items-center border border-neutral-800 hover:border-red-600 transition">
-                        <div>
-                            <h4 class="font-bold text-white">Equipa Casual</h4>
-                            <p class="text-xs text-neutral-400">Criado por GamerPT • 3/5 jogadores</p>
-                        </div>
-                        <button onclick="joinGroup('public')" class="room-enter-btn px-4 py-2 bg-neutral-800 hover:bg-red-600 text-white rounded font-medium transition text-sm">Entrar</button>
-                    </div>
-                     <!-- Sala Mockada 2 -->
-                     <div class="room-list-item bg-neutral-900 p-4 rounded-lg flex justify-between items-center border border-neutral-800 hover:border-red-600 transition">
-                        <div>
-                            <h4 class="font-bold text-white">Ranked Hardcore</h4>
-                            <p class="text-xs text-neutral-400">Criado por SilvaGamer • 4/5 jogadores</p>
-                        </div>
-                        <button onclick="joinGroup('public')" class="room-enter-btn px-4 py-2 bg-neutral-800 hover:bg-red-600 text-white rounded font-medium transition text-sm">Entrar</button>
-                    </div>
+            <div class="rooms-toolbar">
+                <div>
+                    <h3 class="text-xl font-bold">Salas Reais Abertas</h3>
+                    <p class="text-sm text-neutral-500">Cada sala tem chat separado. Mensagens só aparecem dentro da sala.</p>
                 </div>
+                <button onclick="refreshRooms()" class="px-4 py-2 bg-neutral-800 hover:bg-red-600 text-white rounded-lg font-bold transition flex items-center justify-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
+                </button>
+            </div>
+
+            <div id="rooms-list" class="space-y-3">
+                <div class="rooms-empty">
+                    Carregando salas reais...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CRIAR/ENTRAR EM SALA REAL -->
+    <div id="room-modal-backdrop" class="modal-backdrop">
+        <div class="room-modal">
+            <div class="flex items-center justify-between gap-3 mb-4">
+                <div>
+                    <h2 id="room-modal-title" class="text-2xl font-bold">Criar Sala</h2>
+                    <p id="room-modal-subtitle" class="text-sm text-neutral-400">Configure sua sala real.</p>
+                </div>
+                <button onclick="closeRoomModal()" class="w-10 h-10 rounded-full bg-neutral-800 hover:bg-red-600 flex items-center justify-center transition" aria-label="Fechar">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <input id="room-name-input" type="text" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-600" placeholder="Nome da sala">
+                <input id="room-password-input" type="password" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-600" placeholder="Senha da sala">
+                <button id="room-modal-action" onclick="confirmRoomModal()" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition">
+                    Criar Sala
+                </button>
             </div>
         </div>
     </div>
@@ -1147,7 +1245,7 @@
                 </button>
                 <div class="text-center min-w-0 px-3">
                     <p class="text-sm font-bold text-white truncate">Chat da Sala</p>
-                    <p id="connection-status" class="text-xs text-red-500 truncate">Conectando ao servidor...</p>
+                    <p id="connection-status" class="text-xs text-red-500 truncate">Online no servidor</p>
                 </div>
                 <button onclick="leaveGroup()" class="w-11 h-11 rounded-xl bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white flex items-center justify-center transition" title="Sair do grupo" aria-label="Sair do grupo">
                     <i data-lucide="log-out" class="w-5 h-5"></i>
@@ -1222,23 +1320,59 @@
         lucide.createIcons();
 
 
+
+
         // ===============================
-        // SERVIDOR EM TEMPO REAL
+        // SISTEMA REAL DE SALAS COM SERVIDOR
         // ===============================
         const socket = io();
-        let currentRoom = '';
+        let currentGame = '';
+        let currentRoomId = '';
+        let currentRoomName = '';
         let currentRoomType = 'public';
+        let modalMode = 'create';
+        let modalRoomType = 'public';
+        let selectedRoomId = '';
+        let selectedRoomName = '';
         let myNick = localStorage.getItem('gamersync_nick') || 'Jogador' + Math.floor(Math.random() * 9999);
-        let onlineMembers = [];
 
         socket.on('connect', () => {
             updateConnectionStatus('Online no servidor');
-            showToast('Conectado ao servidor!', 'success');
+            refreshRooms();
         });
 
         socket.on('disconnect', () => {
             updateConnectionStatus('Servidor desconectado');
-            showToast('Servidor desconectado.', 'info');
+        });
+
+        socket.on('rooms-list', (rooms) => {
+            renderRooms(rooms || []);
+        });
+
+        socket.on('room-created', (room) => {
+            closeRoomModal();
+            enterRealRoom(room.id, '', room);
+        });
+
+        socket.on('join-error', (data) => {
+            showToast(data.message || 'Não foi possível entrar na sala.', 'error');
+        });
+
+        socket.on('joined-room', (room) => {
+            currentRoomId = room.id;
+            currentRoomName = room.name;
+            currentRoomType = room.type;
+
+            document.getElementById('group-title').innerText = room.name;
+            const playing = document.getElementById('game-playing');
+            if (playing) playing.innerText = room.game || currentGame || 'Jogo';
+
+            const chatBox = document.getElementById('chat-messages');
+            if (chatBox) chatBox.innerHTML = '';
+
+            goToScreen('screen-group');
+            addSystemMessage(`Você entrou em ${room.name}.`);
+            closeRoomModal();
         });
 
         socket.on('server-message', (data) => {
@@ -1246,8 +1380,7 @@
         });
 
         socket.on('room-members', (members) => {
-            onlineMembers = members;
-            renderMembers(members);
+            renderMembers(members || []);
         });
 
         socket.on('chat-message', (data) => {
@@ -1263,7 +1396,7 @@
             const inputs = document.querySelectorAll('input[type="text"]');
             for (const input of inputs) {
                 const value = input.value.trim();
-                if (value.length >= 2 && !value.includes(' ')) {
+                if (value.length >= 2 && !value.includes(' ') && !value.toLowerCase().includes('sala')) {
                     myNick = value;
                     localStorage.setItem('gamersync_nick', myNick);
                     return myNick;
@@ -1272,41 +1405,170 @@
             return myNick;
         }
 
-        function getPrivateRoomData() {
-            const detailScreen = document.getElementById('screen-game-detail');
-            const inputs = detailScreen ? detailScreen.querySelectorAll('input') : [];
-            let roomName = '';
-            let password = '';
-
-            if (inputs[0]) roomName = inputs[0].value.trim();
-            if (inputs[1]) password = inputs[1].value.trim();
-
-            return { roomName, password };
+        function refreshRooms() {
+            if (!currentGame) return;
+            socket.emit('get-rooms', { game: currentGame });
         }
 
-        function createRoomName(type) {
+        function openCreateRoomModal(type) {
+            modalMode = 'create';
+            modalRoomType = type;
+            selectedRoomId = '';
+            selectedRoomName = '';
+
+            const modal = document.getElementById('room-modal-backdrop');
+            const title = document.getElementById('room-modal-title');
+            const subtitle = document.getElementById('room-modal-subtitle');
+            const nameInput = document.getElementById('room-name-input');
+            const passInput = document.getElementById('room-password-input');
+            const action = document.getElementById('room-modal-action');
+
+            title.innerText = type === 'private' ? 'Criar Sala Privada' : 'Criar Sala Pública';
+            subtitle.innerText = type === 'private'
+                ? 'Só entra quem souber a senha.'
+                : 'Aparece para todos do mesmo jogo.';
+            nameInput.value = '';
+            nameInput.style.display = 'block';
+            nameInput.placeholder = type === 'private' ? 'Nome da sala privada' : 'Nome da sala pública';
+            passInput.value = '';
+            passInput.style.display = type === 'private' ? 'block' : 'none';
+            action.innerText = 'Criar Sala';
+
+            modal.classList.add('active');
+            setTimeout(() => nameInput.focus(), 100);
+        }
+
+        function openJoinRoomModal(roomId, roomName, type) {
+            modalMode = 'join';
+            modalRoomType = type;
+            selectedRoomId = roomId;
+            selectedRoomName = roomName;
+
+            const modal = document.getElementById('room-modal-backdrop');
+            const title = document.getElementById('room-modal-title');
+            const subtitle = document.getElementById('room-modal-subtitle');
+            const nameInput = document.getElementById('room-name-input');
+            const passInput = document.getElementById('room-password-input');
+            const action = document.getElementById('room-modal-action');
+
+            title.innerText = `Entrar em ${roomName}`;
+            subtitle.innerText = type === 'private'
+                ? 'Digite a senha para entrar nessa sala.'
+                : 'Essa sala é pública.';
+            nameInput.style.display = 'none';
+            passInput.value = '';
+            passInput.style.display = type === 'private' ? 'block' : 'none';
+            action.innerText = 'Entrar na Sala';
+
+            modal.classList.add('active');
+
             if (type === 'private') {
-                const data = getPrivateRoomData();
-                return data.roomName || `Sala Privada ${currentGame || 'Game'}`;
+                setTimeout(() => passInput.focus(), 100);
+            } else {
+                confirmRoomModal();
             }
-            return `${currentGame || 'Jogo'} - Sala Pública`;
         }
 
-        function joinServerRoom(type) {
+        function closeRoomModal() {
+            const modal = document.getElementById('room-modal-backdrop');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function confirmRoomModal() {
             getNickFromInputs();
 
-            currentRoomType = type;
-            currentRoom = createRoomName(type);
+            const nameInput = document.getElementById('room-name-input');
+            const passInput = document.getElementById('room-password-input');
+            const password = passInput ? passInput.value.trim() : '';
 
-            const privateData = getPrivateRoomData();
+            if (modalMode === 'create') {
+                const roomName = (nameInput.value || '').trim();
+
+                if (!roomName) {
+                    showToast('Coloque um nome para a sala.', 'error');
+                    return;
+                }
+
+                if (modalRoomType === 'private' && !password) {
+                    showToast('Coloque uma senha para a sala privada.', 'error');
+                    return;
+                }
+
+                socket.emit('create-room', {
+                    game: currentGame || 'Minecraft',
+                    name: roomName,
+                    type: modalRoomType,
+                    password,
+                    nick: myNick
+                });
+                return;
+            }
+
+            enterRealRoom(selectedRoomId, password);
+        }
+
+        function enterRealRoom(roomId, password = '', roomData = null) {
+            getNickFromInputs();
+
+            if (!roomId && roomData) roomId = roomData.id;
+            if (!roomId) return;
 
             socket.emit('join-room', {
-                room: currentRoom,
-                game: currentGame || 'Minecraft',
+                roomId,
                 nick: myNick,
-                type: currentRoomType,
-                password: privateData.password || ''
+                password
             });
+        }
+
+        function renderRooms(rooms) {
+            const list = document.getElementById('rooms-list');
+            if (!list) return;
+
+            const gameRooms = rooms.filter(room => room.game === currentGame);
+
+            if (gameRooms.length === 0) {
+                list.innerHTML = `
+                    <div class="rooms-empty">
+                        Nenhuma sala real aberta em ${currentGame || 'este jogo'} ainda.<br>
+                        Crie uma sala pública ou privada para começar.
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = '';
+
+            gameRooms.forEach(room => {
+                const card = document.createElement('div');
+                card.className = 'room-card-real';
+
+                const locked = room.type === 'private';
+                const full = room.count >= room.maxPlayers;
+
+                card.innerHTML = `
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                            <h4 class="font-bold text-white text-lg">${escapeHTML(room.name)}</h4>
+                            <span class="room-type-badge">
+                                ${locked ? 'Privada' : 'Pública'}
+                            </span>
+                        </div>
+                        <p class="text-sm text-neutral-400">
+                            ${room.count}/${room.maxPlayers} jogadores • ${escapeHTML(room.game)}
+                        </p>
+                    </div>
+                    <button
+                        ${full ? 'disabled' : ''}
+                        onclick="openJoinRoomModal('${room.id}', '${escapeAttr(room.name)}', '${room.type}')"
+                        class="px-4 py-2 ${full ? 'bg-neutral-700 opacity-60' : 'bg-neutral-800 hover:bg-red-600'} text-white rounded-lg font-bold transition">
+                        ${full ? 'Cheia' : 'Entrar'}
+                    </button>
+                `;
+
+                list.appendChild(card);
+            });
+
+            if (window.lucide) lucide.createIcons();
         }
 
         function addSystemMessage(text) {
@@ -1374,16 +1636,16 @@
 
             const count = document.querySelector('#group-title + p');
             if (count) {
-                count.innerHTML = `${members.length}/5 Jogadores • <span id="game-playing">${currentGame || 'Minecraft'}</span>`;
+                count.innerHTML = `${members.length}/5 Jogadores • <span id="game-playing">${currentGame || 'Jogo'}</span>`;
             }
 
             container.innerHTML = `
                 <h3 class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-4">Membros da Sala</h3>
             `;
 
-            members.forEach((member, index) => {
+            members.forEach((member) => {
                 const card = document.createElement('div');
-                card.className = index === 0
+                card.className = member.id === socket.id
                     ? 'flex justify-between items-center mb-4 bg-neutral-800 p-2 rounded-lg border border-neutral-700'
                     : 'flex justify-between items-center mb-2 p-2 hover:bg-neutral-800 rounded-lg transition group';
 
@@ -1394,12 +1656,12 @@
                             <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-neutral-800"></div>
                         </div>
                         <div>
-                            <p class="text-sm font-bold text-white">${member.id === socket.id ? 'Tu' : member.nick}${member.host ? ' (Host)' : ''}</p>
+                            <p class="text-sm font-bold text-white">${member.id === socket.id ? 'Tu' : escapeHTML(member.nick)}${member.host ? ' (Host)' : ''}</p>
                             <p class="text-xs text-neutral-400">${member.id === socket.id ? 'Microfone Ativo' : 'A escutar'}</p>
                         </div>
                     </div>
                     ${member.id !== socket.id ? `
-                    <button onclick="addFriend('${member.nick}')" class="text-neutral-500 hover:text-red-500 transition" title="Adicionar Amigo">
+                    <button onclick="addFriend('${escapeAttr(member.nick)}')" class="text-neutral-500 hover:text-red-500 transition" title="Adicionar Amigo">
                         <i data-lucide="user-plus" class="w-5 h-5"></i>
                     </button>` : ''}
                 `;
@@ -1407,22 +1669,20 @@
                 container.appendChild(card);
             });
 
-            const friendsTitle = document.createElement('h3');
-            friendsTitle.className = 'text-xs font-bold text-neutral-500 uppercase tracking-wider mt-6 mb-4 mobile-hide-small';
-            friendsTitle.textContent = 'Faixa de Amigos (Online)';
-            container.appendChild(friendsTitle);
-
-            const friend = document.createElement('div');
-            friend.className = 'flex justify-between items-center p-2 mobile-hide-small';
-            friend.innerHTML = `
-                <div class="flex items-center gap-3 opacity-60">
-                    <img src="https://ui-avatars.com/api/?name=L&background=111&color=fff" class="w-8 h-8 rounded-full">
-                    <span class="text-sm">Lucas (A jogar noutra sala)</span>
-                </div>
-            `;
-            container.appendChild(friend);
-
             if (window.lucide) lucide.createIcons();
+        }
+
+        function escapeHTML(value) {
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+
+        function escapeAttr(value) {
+            return escapeHTML(value).replaceAll('`', '&#096;');
         }
 
 
@@ -1449,7 +1709,6 @@
         });
 
         // Variáveis de Estado
-        let currentGame = '';
         let isMicMuted = false;
 
         // Abre/fecha o painel de amigos no celular
@@ -1496,38 +1755,33 @@
         // Abrir detalhes de um jogo
         function openGame(gameName, bgClass) {
             currentGame = gameName;
-            
-            // Atualiza Header do jogo
+
             const header = document.getElementById('game-detail-header');
             header.className = `h-64 relative flex items-end p-6 border-b border-red-600 shadow-[0_4px_20px_rgba(220,38,38,0.2)] ${bgClass}`;
-            
+
             document.getElementById('game-detail-title').innerText = gameName;
-            document.getElementById('game-playing').innerText = gameName;
-            
+            const playing = document.getElementById('game-playing');
+            if (playing) playing.innerText = gameName;
+
             goToScreen('screen-game-detail');
+            refreshRooms();
         }
 
         // Entrar em um grupo
         function joinGroup(type) {
-            const title = type === 'public' ? 'Grupo Público' : 'Esquadrão Privado';
-            document.getElementById('group-title').innerText = title;
-            goToScreen('screen-group');
-            showToast(`Entraste na sala de ${currentGame}!`, 'success');
-
-            const chatBox = document.getElementById('chat-messages');
-            chatBox.innerHTML = '';
-
-            joinServerRoom(type);
+            openCreateRoomModal(type);
         }
 
         // Sair do Grupo
         function leaveGroup() {
             if(confirm('Tens a certeza que queres sair deste grupo?')) {
-                if (currentRoom) {
-                    socket.emit('leave-room', { room: currentRoom, nick: myNick });
-                    currentRoom = '';
+                if (currentRoomId) {
+                    socket.emit('leave-room', { roomId: currentRoomId, nick: myNick });
+                    currentRoomId = '';
+                    currentRoomName = '';
                 }
                 goToScreen('screen-game-detail');
+                refreshRooms();
                 showToast('Saíste do grupo.', 'info');
             }
         }
@@ -1571,13 +1825,13 @@
             const text = input.value.trim();
 
             if (text !== '') {
-                if (!currentRoom) {
+                if (!currentRoomId) {
                     showToast('Entra em uma sala primeiro.', 'error');
                     return;
                 }
 
                 socket.emit('chat-message', {
-                    room: currentRoom,
+                    roomId: currentRoomId,
                     nick: myNick,
                     text
                 });
