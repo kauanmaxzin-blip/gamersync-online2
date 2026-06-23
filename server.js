@@ -38,16 +38,48 @@ function sendRooms() {
   io.emit("rooms-list", allRooms);
 }
 
+function getMember(room, socketId) {
+  if (!room) return null;
+  return room.members.find((member) => member.id === socketId) || null;
+}
+
 function sendMembers(roomId) {
   const room = rooms.get(roomId);
   if (!room) return;
 
-  io.to(roomId).emit("room-members", room.members);
+  const members = room.members.map((member) => ({
+    ...member,
+    voice: room.voiceUsers.has(member.id)
+  }));
+
+  io.to(roomId).emit("room-members", members);
+}
+
+function removeVoiceUser(socketId, roomId = null) {
+  const entries = roomId ? [[roomId, rooms.get(roomId)]] : Array.from(rooms.entries());
+
+  for (const [id, room] of entries) {
+    if (!room) continue;
+
+    if (room.voiceUsers && room.voiceUsers.has(socketId)) {
+      const member = getMember(room, socketId);
+      room.voiceUsers.delete(socketId);
+
+      io.to(id).emit("voice-user-left", {
+        id: socketId,
+        nick: member ? member.nick : "Jogador"
+      });
+
+      sendMembers(id);
+    }
+  }
 }
 
 function removeMemberFromAllRooms(socketId, skipRoomId = null) {
   for (const [roomId, room] of rooms.entries()) {
     if (skipRoomId && roomId === skipRoomId) continue;
+
+    removeVoiceUser(socketId, roomId);
 
     const before = room.members.length;
     room.members = room.members.filter((member) => member.id !== socketId);
@@ -62,12 +94,12 @@ function removeMemberFromAllRooms(socketId, skipRoomId = null) {
       }
 
       sendMembers(roomId);
-      sendRooms(room.game);
+      sendRooms();
     }
 
     if (room.members.length === 0) {
       rooms.delete(roomId);
-      sendRooms(room.game);
+      sendRooms();
     }
   }
 }
@@ -81,13 +113,12 @@ function joinRoom(socket, { roomId, nick, password }) {
   }
 
   const cleanNick = String(nick || "Jogador").trim().slice(0, 24);
-
   const alreadyInThisRoom = room.members.some((member) => member.id === socket.id);
 
   if (alreadyInThisRoom) {
     socket.emit("joined-room", publicRoom(room));
     sendMembers(roomId);
-    sendRooms(room.game);
+    sendRooms();
     return;
   }
 
@@ -103,8 +134,6 @@ function joinRoom(socket, { roomId, nick, password }) {
     return;
   }
 
-  // O jogador fica em apenas uma sala por vez,
-  // mas não apagamos a sala que ele acabou de criar/entrar.
   removeMemberFromAllRooms(socket.id, roomId);
 
   socket.join(roomId);
@@ -126,12 +155,14 @@ function joinRoom(socket, { roomId, nick, password }) {
   });
 
   sendMembers(roomId);
-  sendRooms(room.game);
+  sendRooms();
 }
 
 function leaveRoom(socket, roomId, nick) {
   const room = rooms.get(roomId);
   if (!room) return;
+
+  removeVoiceUser(socket.id, roomId);
 
   socket.leave(roomId);
 
@@ -151,7 +182,28 @@ function leaveRoom(socket, roomId, nick) {
     rooms.delete(roomId);
   }
 
-  sendRooms(room.game);
+  sendRooms();
+}
+
+function relayVoice(socket, eventName, { roomId, to, offer, answer, candidate }) {
+  const room = rooms.get(roomId);
+  if (!room) return;
+
+  const fromMember = getMember(room, socket.id);
+  const toMember = getMember(room, to);
+
+  if (!fromMember || !toMember) return;
+
+  const payload = {
+    from: socket.id,
+    nick: fromMember.nick
+  };
+
+  if (offer) payload.offer = offer;
+  if (answer) payload.answer = answer;
+  if (candidate) payload.candidate = candidate;
+
+  io.to(to).emit(eventName, payload);
 }
 
 io.on("connection", (socket) => {
@@ -188,19 +240,19 @@ io.on("connection", (socket) => {
       password: cleanPassword,
       maxPlayers: 5,
       members: [],
+      voiceUsers: new Set(),
       createdAt: Date.now()
     };
 
     rooms.set(id, room);
 
-    // O criador entra uma única vez na sala.
     joinRoom(socket, {
       roomId: id,
       nick: nick || "Jogador",
       password: cleanPassword
     });
 
-    sendRooms(cleanGame);
+    sendRooms();
   });
 
   socket.on("join-room", (data) => {
@@ -234,8 +286,6 @@ io.on("connection", (socket) => {
       minute: "2-digit"
     });
 
-    // Aqui está o principal:
-    // a mensagem vai SOMENTE para quem está dentro dessa sala.
     io.to(roomId).emit("chat-message", {
       roomId,
       senderId: socket.id,
@@ -243,6 +293,50 @@ io.on("connection", (socket) => {
       text: cleanText,
       time
     });
+  });
+
+  socket.on("voice-join", ({ roomId, nick }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const member = getMember(room, socket.id);
+    if (!member) return;
+
+    room.voiceUsers.add(socket.id);
+
+    const otherVoiceUsers = room.members
+      .filter((memberItem) => room.voiceUsers.has(memberItem.id) && memberItem.id !== socket.id)
+      .map((memberItem) => ({
+        id: memberItem.id,
+        nick: memberItem.nick
+      }));
+
+    socket.emit("voice-users", {
+      users: otherVoiceUsers
+    });
+
+    socket.to(roomId).emit("voice-user-joined", {
+      id: socket.id,
+      nick: nick || member.nick
+    });
+
+    sendMembers(roomId);
+  });
+
+  socket.on("voice-leave", ({ roomId }) => {
+    removeVoiceUser(socket.id, roomId);
+  });
+
+  socket.on("voice-offer", (data) => {
+    relayVoice(socket, "voice-offer", data);
+  });
+
+  socket.on("voice-answer", (data) => {
+    relayVoice(socket, "voice-answer", data);
+  });
+
+  socket.on("voice-ice", (data) => {
+    relayVoice(socket, "voice-ice", data);
   });
 
   socket.on("disconnect", () => {

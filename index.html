@@ -860,6 +860,25 @@
             text-align: center;
         }
 
+
+        /* Sistema de voz */
+        .voice-button-active {
+            background: #dc2626 !important;
+            border-color: #ef4444 !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 28px rgba(220, 38, 38, .38) !important;
+        }
+
+        .voice-status-dot {
+            display: inline-block;
+            width: .55rem;
+            height: .55rem;
+            border-radius: 999px;
+            background: #22c55e;
+            box-shadow: 0 0 12px rgba(34,197,94,.7);
+            margin-right: .35rem;
+        }
+
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex flex-col">
@@ -1382,6 +1401,7 @@
 
         socket.on('disconnect', () => {
             updateConnectionStatus('Servidor desconectado');
+            stopVoiceChat(false);
         });
 
         socket.on('rooms-list', (rooms) => {
@@ -1399,6 +1419,7 @@
         });
 
         socket.on('joined-room', (room) => {
+            if (voiceEnabled) stopVoiceChat(false);
             currentRoomId = room.id;
             currentRoomName = room.name;
             currentRoomType = room.type;
@@ -1426,6 +1447,64 @@
         socket.on('chat-message', (data) => {
             addChatMessage(data);
         });
+
+        socket.on('voice-users', async (data) => {
+            if (!voiceEnabled) return;
+
+            const users = data.users || [];
+            for (const user of users) {
+                await callVoiceUser(user.id, user.nick);
+            }
+        });
+
+        socket.on('voice-user-joined', (user) => {
+            if (!voiceEnabled) return;
+            showToast(`${user.nick || 'Um jogador'} ativou o microfone.`, 'info');
+        });
+
+        socket.on('voice-user-left', (user) => {
+            closeVoicePeer(user.id);
+            if (voiceEnabled) {
+                showToast(`${user.nick || 'Um jogador'} saiu da voz.`, 'info');
+            }
+        });
+
+        socket.on('voice-offer', async ({ from, nick, offer }) => {
+            if (!voiceEnabled || !localVoiceStream) return;
+
+            const pc = createVoicePeer(from, nick);
+            await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            socket.emit('voice-answer', {
+                roomId: currentRoomId,
+                to: from,
+                answer
+            });
+        });
+
+        socket.on('voice-answer', async ({ from, answer }) => {
+            const pc = voicePeers.get(from);
+            if (!pc) return;
+
+            if (pc.signalingState !== 'stable') {
+                await pc.setRemoteDescription(new RTCSessionDescription(answer));
+            }
+        });
+
+        socket.on('voice-ice', async ({ from, candidate }) => {
+            const pc = voicePeers.get(from);
+            if (!pc || !candidate) return;
+
+            try {
+                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (error) {
+                console.warn('Erro ao adicionar ICE:', error);
+            }
+        });
+
 
         function updateConnectionStatus(text) {
             const el = document.getElementById('connection-status');
@@ -1990,6 +2069,10 @@
         // Sair do Grupo
         function leaveGroup() {
             if(confirm('Tens a certeza que queres sair deste grupo?')) {
+                if (voiceEnabled) {
+                    stopVoiceChat(false);
+                }
+
                 if (currentRoomId) {
                     socket.emit('leave-room', { roomId: currentRoomId, nick: myNick });
                     currentRoomId = '';
@@ -2006,23 +2089,205 @@
             showToast(`Pedido de amizade enviado para ${name}!`, 'success');
         }
 
-        // Toggle Microfone (Lógica da Linha Vermelha)
-        function toggleMic() {
-            isMicMuted = !isMicMuted;
-            const slash = document.getElementById('mic-slash');
-            const micBtn = document.getElementById('mic-btn');
-            
-            if (isMicMuted) {
-                slash.classList.remove('hidden'); // Mostra a linha vermelha
-                micBtn.classList.replace('bg-neutral-800', 'bg-neutral-900');
-                showToast('Microfone silenciado', 'info');
+
+        // ===============================
+        // SISTEMA DE MICROFONE / VOZ REAL
+        // ===============================
+        const voiceRTCConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        let localVoiceStream = null;
+        let voiceEnabled = false;
+        const voicePeers = new Map();
+        const remoteVoiceAudios = new Map();
+
+        async function toggleMic() {
+            if (voiceEnabled) {
+                stopVoiceChat(true);
             } else {
-                slash.classList.add('hidden'); // Esconde a linha vermelha
-                micBtn.classList.replace('bg-neutral-900', 'bg-neutral-800');
-                showToast('Microfone ativado', 'info');
+                await startVoiceChat();
             }
         }
 
+        async function startVoiceChat() {
+            if (!currentRoomId) {
+                showToast('Entre em uma sala primeiro.', 'error');
+                return;
+            }
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showToast('Seu navegador não liberou microfone.', 'error');
+                return;
+            }
+
+            try {
+                localVoiceStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    },
+                    video: false
+                });
+
+                voiceEnabled = true;
+                setVoiceButtons(true);
+
+                socket.emit('voice-join', {
+                    roomId: currentRoomId,
+                    nick: myNick
+                });
+
+                showToast('Microfone ativado. Você entrou na voz da sala.', 'success');
+                addSystemMessage(`${myNick} entrou na chamada de voz.`);
+            } catch (error) {
+                console.error(error);
+                showToast('Permita o microfone para falar com a galera.', 'error');
+                setVoiceButtons(false);
+            }
+        }
+
+        function stopVoiceChat(showMessage = true) {
+            if (!voiceEnabled && !localVoiceStream) return;
+
+            const oldRoomId = currentRoomId;
+
+            voiceEnabled = false;
+
+            if (localVoiceStream) {
+                localVoiceStream.getTracks().forEach(track => track.stop());
+                localVoiceStream = null;
+            }
+
+            for (const peerId of Array.from(voicePeers.keys())) {
+                closeVoicePeer(peerId);
+            }
+
+            if (oldRoomId) {
+                socket.emit('voice-leave', {
+                    roomId: oldRoomId,
+                    nick: myNick
+                });
+            }
+
+            setVoiceButtons(false);
+
+            if (showMessage) {
+                showToast('Microfone desligado.', 'info');
+                addSystemMessage(`${myNick} saiu da chamada de voz.`);
+            }
+        }
+
+        function setVoiceButtons(active) {
+            isMicMuted = !active;
+
+            const slash = document.getElementById('mic-slash');
+            const micBtn = document.getElementById('mic-btn');
+
+            if (slash) {
+                if (active) slash.classList.add('hidden');
+                else slash.classList.remove('hidden');
+            }
+
+            if (micBtn) {
+                micBtn.classList.toggle('voice-button-active', active);
+            }
+
+            document.querySelectorAll('button[onclick="toggleMic()"]').forEach(button => {
+                button.classList.toggle('voice-button-active', active);
+                button.title = active ? 'Desligar microfone' : 'Ligar microfone';
+            });
+        }
+
+        function createVoicePeer(peerId, nick = 'Jogador') {
+            if (voicePeers.has(peerId)) {
+                return voicePeers.get(peerId);
+            }
+
+            const pc = new RTCPeerConnection(voiceRTCConfig);
+
+            if (localVoiceStream) {
+                localVoiceStream.getTracks().forEach(track => {
+                    pc.addTrack(track, localVoiceStream);
+                });
+            }
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('voice-ice', {
+                        roomId: currentRoomId,
+                        to: peerId,
+                        candidate: event.candidate
+                    });
+                }
+            };
+
+            pc.ontrack = (event) => {
+                let audio = remoteVoiceAudios.get(peerId);
+
+                if (!audio) {
+                    audio = document.createElement('audio');
+                    audio.autoplay = true;
+                    audio.playsInline = true;
+                    audio.dataset.peerId = peerId;
+                    audio.style.display = 'none';
+                    document.body.appendChild(audio);
+                    remoteVoiceAudios.set(peerId, audio);
+                }
+
+                audio.srcObject = event.streams[0];
+
+                audio.play().catch(() => {
+                    console.log('O navegador vai liberar o áudio depois de um toque na tela.');
+                });
+            };
+
+            pc.onconnectionstatechange = () => {
+                if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) {
+                    setTimeout(() => closeVoicePeer(peerId), 800);
+                }
+            };
+
+            voicePeers.set(peerId, pc);
+            return pc;
+        }
+
+        async function callVoiceUser(peerId, nick = 'Jogador') {
+            if (!voiceEnabled || !localVoiceStream || peerId === socket.id) return;
+
+            const pc = createVoicePeer(peerId, nick);
+
+            const offer = await pc.createOffer({
+                offerToReceiveAudio: true
+            });
+
+            await pc.setLocalDescription(offer);
+
+            socket.emit('voice-offer', {
+                roomId: currentRoomId,
+                to: peerId,
+                offer
+            });
+        }
+
+        function closeVoicePeer(peerId) {
+            const pc = voicePeers.get(peerId);
+            if (pc) {
+                pc.close();
+                voicePeers.delete(peerId);
+            }
+
+            const audio = remoteVoiceAudios.get(peerId);
+            if (audio) {
+                audio.srcObject = null;
+                audio.remove();
+                remoteVoiceAudios.delete(peerId);
+            }
+        }
         // Evita que uma mensagem digitada vire HTML dentro do chat
         function escapeHTML(value) {
             return value

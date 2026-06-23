@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "2.3.0",
-  "description": "GamerSync com contador real de salas ativas",
+  "version": "2.4.0",
+  "description": "GamerSync com microfone e voz em tempo real por sala",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

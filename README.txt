@@ -1,10 +1,16 @@
-GamerSync - Salas Ativas Reais
+GamerSync - Microfone / Voz em Tempo Real
 
 Mudanças:
-- os cards dos jogos não mostram mais números falsos
-- Minecraft, Free Fire, Roblox e Valorant mostram a quantidade real de salas abertas
-- o servidor manda a lista real de salas para todos
-- a tela do jogo continua filtrando só as salas daquele jogo
+- botão de microfone agora pede permissão de áudio
+- jogadores da mesma sala podem falar entre si
+- voz fica separada por sala, igual o chat
+- cada pessoa precisa tocar no microfone para entrar na voz
+- ao sair da sala, o microfone desliga automaticamente
+
+Importante:
+- Funciona em HTTPS, como o link do Render.
+- No celular, o navegador vai pedir permissão para usar o microfone.
+- Todos que quiserem falar/escutar precisam ativar o microfone.
 
 Substitua no GitHub:
 - index.html
