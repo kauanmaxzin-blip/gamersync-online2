@@ -239,12 +239,26 @@ function joinRoom(socket, { roomId, nick, password }) {
   const alreadyInThisRoom = room.members.some((member) => member.id === socket.id);
 
   if (alreadyInThisRoom) {
+    socket.join(roomId);
     socket.emit("joined-room", publicRoom(room));
 
-  socket.emit("room-history", {
-    roomId,
-    messages: room.messages || []
-  });
+    socket.emit("room-history", {
+      roomId,
+      messages: room.messages || []
+    });
+
+    if (room.screenSharerId && room.screenSharerId !== socket.id) {
+      socket.emit("screen-share-available", {
+        id: room.screenSharerId,
+        nick: room.screenSharerNick || "Jogador"
+      });
+
+      io.to(room.screenSharerId).emit("screen-viewer-joined", {
+        id: socket.id,
+        nick: cleanNick
+      });
+    }
+
     sendMembers(roomId);
     sendRooms();
     emitAdminRooms();
@@ -275,6 +289,11 @@ function joinRoom(socket, { roomId, nick, password }) {
   });
 
   socket.emit("joined-room", publicRoom(room));
+
+  socket.emit("room-history", {
+    roomId,
+    messages: room.messages || []
+  });
 
   socket.emit("server-message", {
     message: `Bem-vindo(a), ${cleanNick}! Você entrou em ${room.name}.`
