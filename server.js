@@ -106,6 +106,8 @@ function joinRoom(socket, { roomId, nick, password }) {
     return;
   }
 
+  // O jogador fica em apenas uma sala por vez,
+  // mas não apagamos a sala que ele acabou de criar/entrar.
   removeMemberFromAllRooms(socket.id, roomId);
 
   socket.join(roomId);
@@ -197,6 +199,7 @@ io.on("connection", (socket) => {
 
     rooms.set(id, room);
 
+    // O criador entra uma única vez na sala.
     joinRoom(socket, {
       roomId: id,
       nick: nick || "Jogador",
@@ -237,8 +240,11 @@ io.on("connection", (socket) => {
       minute: "2-digit"
     });
 
+    // Aqui está o principal:
+    // a mensagem vai SOMENTE para quem está dentro dessa sala.
     io.to(roomId).emit("chat-message", {
       roomId,
+      senderId: socket.id,
       nick: String(nick || "Jogador").slice(0, 24),
       text: cleanText,
       time

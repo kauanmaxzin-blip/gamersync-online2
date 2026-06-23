@@ -1,4 +1,8 @@
-GamerSync - Salas Reais
+Correção:
+- mensagens suas aparecem na direita
+- mensagens dos outros aparecem na esquerda
+- o app usa ID da conexão, não o nome
+- evita pegar nome da sala como nome do jogador
 
 Substitua no GitHub:
 - index.html
@@ -8,11 +12,3 @@ Substitua no GitHub:
 
 Depois no Render:
 Manual Deploy > Deploy latest commit
-
-Mudanças:
-- remove salas de teste
-- cria salas reais por jogo
-- sala pública e privada
-- cada sala tem ID próprio
-- mensagens aparecem só para jogadores da mesma sala
-- lista de salas atualiza em tempo real

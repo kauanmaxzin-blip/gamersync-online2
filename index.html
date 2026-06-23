@@ -1393,15 +1393,34 @@
         }
 
         function getNickFromInputs() {
-            const inputs = document.querySelectorAll('input[type="text"]');
-            for (const input of inputs) {
-                const value = input.value.trim();
-                if (value.length >= 2 && !value.includes(' ') && !value.toLowerCase().includes('sala')) {
-                    myNick = value;
-                    localStorage.setItem('gamersync_nick', myNick);
-                    return myNick;
+            const savedNick = localStorage.getItem('gamersync_nick');
+
+            // Se o jogador já tem nick salvo, não pega o nome da sala por engano.
+            if (savedNick && savedNick.trim().length >= 2) {
+                myNick = savedNick.trim();
+                return myNick;
+            }
+
+            const loginScreens = [
+                document.getElementById('screen-login-form'),
+                document.getElementById('screen-signup-1')
+            ];
+
+            for (const screen of loginScreens) {
+                if (!screen) continue;
+
+                const inputs = screen.querySelectorAll('input[type="text"]');
+                for (const input of inputs) {
+                    const value = input.value.trim();
+
+                    if (value.length >= 2) {
+                        myNick = value.slice(0, 24);
+                        localStorage.setItem('gamersync_nick', myNick);
+                        return myNick;
+                    }
                 }
             }
+
             return myNick;
         }
 
@@ -1591,7 +1610,7 @@
             const chatBox = document.getElementById('chat-messages');
             if (!chatBox) return;
 
-            const isMine = data.nick === myNick;
+            const isMine = data.senderId === socket.id;
             const row = document.createElement('div');
             row.className = isMine ? 'flex gap-3 flex-row-reverse' : 'flex gap-3';
 
