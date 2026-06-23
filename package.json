@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "3.8.1",
-  "description": "GamerSync com entrada de sala corrigida e espelhamento",
+  "version": "3.8.2",
+  "description": "GamerSync com salas estáveis",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
