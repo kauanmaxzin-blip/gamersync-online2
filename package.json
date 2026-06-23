@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "3.5.0",
-  "description": "GamerSync com login, salas, histórico e emoji funcionando",
+  "version": "3.6.0",
+  "description": "GamerSync com bolas dos players e efeito de voz no topo",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

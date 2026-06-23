@@ -1121,6 +1121,224 @@
             .emoji-option { min-height: 2.55rem; font-size: 1.45rem; }
         }
 
+    
+        /* Bolas dos players no topo da sala */
+        .players-top-strip {
+            padding: 0.9rem 1rem 0.75rem;
+            background: linear-gradient(180deg, rgba(10,10,10,.96) 0%, rgba(18,18,18,.92) 100%);
+            border-bottom: 1px solid rgba(38, 38, 38, 1);
+            overflow: hidden;
+        }
+
+        .players-top-strip-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            margin-bottom: .65rem;
+        }
+
+        .players-top-strip-title {
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .players-top-strip-subtitle {
+            color: #a3a3a3;
+            font-size: 0.78rem;
+            margin-top: 0.2rem;
+        }
+
+        .player-orbs-row {
+            display: flex;
+            gap: 0.85rem;
+            overflow-x: auto;
+            padding-bottom: 0.2rem;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .player-orbs-row::-webkit-scrollbar { display: none; }
+
+        .players-orbs-empty {
+            min-height: 4rem;
+            display: flex;
+            align-items: center;
+            color: #a3a3a3;
+            font-size: 0.9rem;
+        }
+
+        .player-orb-card {
+            position: relative;
+            flex: 0 0 auto;
+            width: 4.45rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.38rem;
+            padding-top: 0.15rem;
+            background: transparent;
+            border: 0;
+        }
+
+        .player-orb-wrap {
+            position: relative;
+            width: 3.7rem;
+            height: 3.7rem;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            padding: 0.2rem;
+            background: radial-gradient(circle at 30% 30%, rgba(38,38,38,.9), rgba(10,10,10,.96));
+            border: 1px solid rgba(64,64,64,.92);
+            box-shadow: 0 0 0 1px rgba(20,20,20,1) inset;
+            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+        }
+
+        .player-orb-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 999px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .player-orb-name {
+            max-width: 100%;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #f5f5f5;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .player-orb-role {
+            font-size: 0.62rem;
+            font-weight: 700;
+            color: #737373;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .player-orb-status-dot {
+            position: absolute;
+            right: 0.15rem;
+            bottom: 0.2rem;
+            width: 0.82rem;
+            height: 0.82rem;
+            border-radius: 999px;
+            border: 2px solid #111111;
+            background: #3f3f46;
+            z-index: 4;
+            transition: background-color .18s ease, transform .18s ease;
+        }
+
+        .player-orb-card.voice-on .player-orb-status-dot {
+            background: #22c55e;
+        }
+
+        .player-orb-card.me .player-orb-wrap {
+            border-color: rgba(220, 38, 38, .7);
+        }
+
+        .player-orb-card .player-orb-ring,
+        .player-orb-card .player-orb-ring-2 {
+            position: absolute;
+            inset: -0.18rem;
+            border-radius: 999px;
+            border: 2px solid rgba(239, 68, 68, 0);
+            opacity: 0;
+            transform: scale(.82);
+            pointer-events: none;
+        }
+
+        .player-orb-card.speaking .player-orb-wrap {
+            transform: translateY(-2px) scale(1.03);
+            border-color: rgba(239, 68, 68, .95);
+            box-shadow: 0 0 0 2px rgba(220,38,38,.22), 0 0 22px rgba(220,38,38,.42), 0 0 34px rgba(239,68,68,.18);
+        }
+
+        .player-orb-card.speaking .player-orb-name {
+            color: #ffffff;
+        }
+
+        .player-orb-card.speaking .player-orb-status-dot {
+            background: #ef4444;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(239, 68, 68, .7);
+        }
+
+        .player-orb-card.speaking .player-orb-ring {
+            opacity: 1;
+            border-color: rgba(239, 68, 68, .65);
+            animation: orbPulse 1s ease-out infinite;
+        }
+
+        .player-orb-card.speaking .player-orb-ring-2 {
+            opacity: 1;
+            border-color: rgba(248, 113, 113, .45);
+            animation: orbPulse 1s ease-out .35s infinite;
+        }
+
+        .player-orb-speaking-label {
+            position: absolute;
+            left: 50%;
+            top: -0.4rem;
+            transform: translateX(-50%);
+            font-size: 0.52rem;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: #111827;
+            background: linear-gradient(135deg, #fca5a5, #ef4444);
+            border-radius: 999px;
+            padding: 0.16rem 0.38rem;
+            box-shadow: 0 4px 12px rgba(239,68,68,.35);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .18s ease;
+            white-space: nowrap;
+        }
+
+        .player-orb-card.speaking .player-orb-speaking-label {
+            opacity: 1;
+        }
+
+        @keyframes orbPulse {
+            0% {
+                opacity: .9;
+                transform: scale(.88);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.42);
+            }
+        }
+
+        @media (max-width: 767px) {
+            .players-top-strip {
+                padding: 0.85rem 0.85rem 0.7rem;
+            }
+
+            .player-orb-card {
+                width: 4.15rem;
+            }
+
+            .player-orb-wrap {
+                width: 3.4rem;
+                height: 3.4rem;
+            }
+
+            .player-orb-name {
+                font-size: 0.69rem;
+            }
+        }
+
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex flex-col">
@@ -1542,6 +1760,18 @@
                 </button>
             </div>
 
+            <div class="players-top-strip relative z-20 shrink-0">
+                <div class="players-top-strip-header">
+                    <div>
+                        <p class="players-top-strip-title">Jogadores na sala</p>
+                        <p class="players-top-strip-subtitle">Quem falar no microfone vai acender aqui em cima.</p>
+                    </div>
+                </div>
+                <div id="top-player-orbs" class="player-orbs-row">
+                    <div class="players-orbs-empty">Entrando na sala...</div>
+                </div>
+            </div>
+
             <!-- Background Watermark -->
             <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
                 <i data-lucide="gamepad-2" class="w-64 h-64 text-white"></i>
@@ -1766,6 +1996,9 @@
             const chatBox = document.getElementById('chat-messages');
             if (chatBox) chatBox.innerHTML = '';
 
+            roomMembersCache = [];
+            speakingUsers.clear();
+            renderPlayerOrbs([]);
             goToScreen('screen-group');
             addSystemMessage(`Você entrou em ${room.name}.`);
             socket.emit('get-room-history', { roomId: currentRoomId });
@@ -2162,33 +2395,41 @@
             const container = document.querySelector('.members-scroll');
             if (!container) return;
 
+            const safeMembers = Array.isArray(members) ? members : [];
+            roomMembersCache = safeMembers;
+            renderPlayerOrbs(safeMembers);
+
             const count = document.querySelector('#group-title + p');
             if (count) {
-                count.innerHTML = `${members.length}/5 Jogadores • <span id="game-playing">${currentGame || 'Jogo'}</span>`;
+                count.innerHTML = `${safeMembers.length}/5 Jogadores • <span id="game-playing">${currentGame || 'Jogo'}</span>`;
             }
 
             container.innerHTML = `
                 <h3 class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-4">Membros da Sala</h3>
             `;
 
-            members.forEach((member) => {
+            safeMembers.forEach((member) => {
+                const isMe = member.id === socket.id;
+                const isVoiceOn = !!member.voice;
+                const isSpeaking = speakingUsers.has(member.id);
+
                 const card = document.createElement('div');
-                card.className = member.id === socket.id
+                card.className = isMe
                     ? 'flex justify-between items-center mb-4 bg-neutral-800 p-2 rounded-lg border border-neutral-700'
                     : 'flex justify-between items-center mb-2 p-2 hover:bg-neutral-800 rounded-lg transition group';
 
                 card.innerHTML = `
                     <div class="flex items-center gap-3">
                         <div class="relative">
-                            <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(member.nick)}&background=${member.id === socket.id ? 'dc2626' : '222'}&color=fff" class="w-10 h-10 rounded-full">
-                            <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-neutral-800"></div>
+                            <img src="${getPlayerAvatarUrl(member)}" class="w-10 h-10 rounded-full">
+                            <div class="absolute bottom-0 right-0 w-3 h-3 ${isSpeaking ? 'bg-red-500' : (isVoiceOn ? 'bg-green-500' : 'bg-neutral-500')} rounded-full border-2 border-neutral-800"></div>
                         </div>
                         <div>
-                            <p class="text-sm font-bold text-white">${member.id === socket.id ? 'Tu' : escapeHTML(member.nick)}${member.host ? ' (Host)' : ''}</p>
-                            <p class="text-xs text-neutral-400">${member.id === socket.id ? 'Microfone Ativo' : 'A escutar'}</p>
+                            <p class="text-sm font-bold text-white">${isMe ? 'Tu' : escapeHTML(member.nick)}${member.host ? ' (Host)' : ''}</p>
+                            <p class="text-xs ${isSpeaking ? 'text-red-400' : (isVoiceOn ? 'text-green-400' : 'text-neutral-400')}">${isSpeaking ? 'Falando agora' : (isVoiceOn ? 'Microfone ativo' : 'A escutar')}</p>
                         </div>
                     </div>
-                    ${member.id !== socket.id ? `
+                    ${!isMe ? `
                     <button onclick="addFriend('${escapeAttr(member.nick)}')" class="text-neutral-500 hover:text-red-500 transition" title="Adicionar Amigo">
                         <i data-lucide="user-plus" class="w-5 h-5"></i>
                     </button>` : ''}
@@ -2846,6 +3087,116 @@
         let voiceEnabled = false;
         const voicePeers = new Map();
         const remoteVoiceAudios = new Map();
+        let roomMembersCache = [];
+        const speakingUsers = new Set();
+        const voiceAnalyserLoops = new Map();
+
+        function getPlayerAvatarUrl(member) {
+            const baseColor = member && member.id === socket.id ? 'dc2626' : '222';
+            const name = (member && member.nick) ? member.nick : 'Jogador';
+            return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${baseColor}&color=fff`;
+        }
+
+        function renderPlayerOrbs(members = roomMembersCache) {
+            const container = document.getElementById('top-player-orbs');
+            if (!container) return;
+
+            const safeMembers = Array.isArray(members) ? members : [];
+            roomMembersCache = safeMembers;
+
+            if (!safeMembers.length) {
+                container.innerHTML = '<div class="players-orbs-empty">Nenhum jogador na sala.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+
+            safeMembers.forEach((member) => {
+                const card = document.createElement('div');
+                const isMe = member.id === socket.id;
+                const isSpeaking = speakingUsers.has(member.id);
+                const isVoiceOn = !!member.voice;
+
+                card.className = `player-orb-card${isMe ? ' me' : ''}${isVoiceOn ? ' voice-on' : ''}${isSpeaking ? ' speaking' : ''}`;
+                card.dataset.playerId = member.id;
+                card.innerHTML = `
+                    <div class="player-orb-wrap">
+                        <span class="player-orb-speaking-label">Falando</span>
+                        <span class="player-orb-ring"></span>
+                        <span class="player-orb-ring-2"></span>
+                        <img src="${getPlayerAvatarUrl(member)}" alt="${escapeAttr(member.nick)}" class="player-orb-avatar">
+                        <span class="player-orb-status-dot"></span>
+                    </div>
+                    <span class="player-orb-name">${isMe ? 'Tu' : escapeHTML(member.nick)}</span>
+                    <span class="player-orb-role">${member.host ? 'Host' : (isVoiceOn ? 'Mic on' : 'Na sala')}</span>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function setPlayerSpeaking(playerId, isSpeaking) {
+            if (!playerId) return;
+
+            if (isSpeaking) speakingUsers.add(playerId);
+            else speakingUsers.delete(playerId);
+
+            document.querySelectorAll(`.player-orb-card[data-player-id="${playerId}"]`).forEach((el) => {
+                el.classList.toggle('speaking', !!isSpeaking);
+            });
+        }
+
+        function stopVoiceAnalyser(playerId) {
+            const loop = voiceAnalyserLoops.get(playerId);
+            if (loop) {
+                if (loop.rafId) cancelAnimationFrame(loop.rafId);
+                if (loop.audioContext && typeof loop.audioContext.close === 'function') {
+                    try { loop.audioContext.close(); } catch (error) {}
+                }
+                voiceAnalyserLoops.delete(playerId);
+            }
+            setPlayerSpeaking(playerId, false);
+        }
+
+        function startVoiceAnalyser(playerId, stream, isLocal = false) {
+            if (!playerId || !stream) return;
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return;
+
+            stopVoiceAnalyser(playerId);
+
+            let audioContext;
+            try {
+                audioContext = new AudioContextClass();
+            } catch (error) {
+                console.warn('AudioContext indisponível:', error);
+                return;
+            }
+
+            const source = audioContext.createMediaStreamSource(stream);
+            const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 512;
+            analyser.smoothingTimeConstant = 0.7;
+            source.connect(analyser);
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            const threshold = isLocal ? 20 : 14;
+
+            const tick = () => {
+                analyser.getByteFrequencyData(dataArray);
+                let total = 0;
+                for (let i = 0; i < dataArray.length; i++) total += dataArray[i];
+                const average = total / dataArray.length;
+                setPlayerSpeaking(playerId, average > threshold);
+                const loop = voiceAnalyserLoops.get(playerId);
+                if (loop) loop.rafId = requestAnimationFrame(tick);
+            };
+
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().catch(() => {});
+            }
+
+            voiceAnalyserLoops.set(playerId, { audioContext, source, analyser, rafId: requestAnimationFrame(tick) });
+        }
 
         async function toggleMic() {
             if (voiceEnabled) {
@@ -2878,6 +3229,7 @@
 
                 voiceEnabled = true;
                 setVoiceButtons(true);
+                startVoiceAnalyser(socket.id, localVoiceStream, true);
 
                 socket.emit('voice-join', {
                     roomId: currentRoomId,
@@ -2904,6 +3256,8 @@
                 localVoiceStream.getTracks().forEach(track => track.stop());
                 localVoiceStream = null;
             }
+
+            stopVoiceAnalyser(socket.id);
 
             for (const peerId of Array.from(voicePeers.keys())) {
                 closeVoicePeer(peerId);
@@ -2982,6 +3336,7 @@
                 }
 
                 audio.srcObject = event.streams[0];
+                startVoiceAnalyser(peerId, event.streams[0], false);
 
                 audio.play().catch(() => {
                     console.log('O navegador vai liberar o áudio depois de um toque na tela.');
@@ -3029,6 +3384,8 @@
                 audio.remove();
                 remoteVoiceAudios.delete(peerId);
             }
+
+            stopVoiceAnalyser(peerId);
         }
         // Evita que uma mensagem digitada vire HTML dentro do chat
         function escapeHTML(value) {
