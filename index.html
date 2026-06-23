@@ -1628,6 +1628,133 @@
             }
         }
 
+    
+        /* Modo assistir YouTube */
+        .watch-party-mode #chat-messages,
+        .watch-party-mode .chat-input-area {
+            display: none !important;
+        }
+
+        .watch-party-mode .players-top-strip {
+            order: 2 !important;
+            margin-top: .5rem !important;
+            margin-bottom: .5rem !important;
+            background: rgba(8,8,8,.96) !important;
+            border-top: 1px solid rgba(38,38,38,.9) !important;
+            border-bottom: none !important;
+            padding-bottom: .6rem !important;
+        }
+
+        .watch-party-mode .players-top-strip-header {
+            padding-bottom: .4rem !important;
+        }
+
+        .watch-party-mode .players-top-strip-title {
+            font-size: .95rem !important;
+        }
+
+        .watch-party-mode .players-top-strip-subtitle {
+            font-size: .76rem !important;
+        }
+
+        .watch-party-mode .player-orbs-row {
+            gap: .65rem !important;
+            padding-top: .1rem !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+
+        .watch-party-mode .player-orb-item {
+            transform: scale(.92);
+            transform-origin: center top;
+        }
+
+        .watch-party-mode #youtube-watch-box {
+            display: flex !important;
+            order: 1 !important;
+            flex-direction: column !important;
+            flex: 1 1 auto !important;
+            max-height: none !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            border-left: none !important;
+            border-right: none !important;
+            box-shadow: none !important;
+            background: #060606 !important;
+        }
+
+        .watch-party-mode .youtube-watch-header {
+            padding: .75rem .9rem !important;
+        }
+
+        .watch-party-mode .youtube-watch-player-wrap {
+            flex: 1 1 auto !important;
+            min-height: 13rem !important;
+            max-height: none !important;
+            aspect-ratio: auto !important;
+            background: #000 !important;
+        }
+
+        .watch-party-mode #youtube-player {
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 13rem !important;
+        }
+
+        .watch-party-mode .youtube-watch-controls {
+            padding: .75rem !important;
+            background: rgba(10,10,10,.98) !important;
+        }
+
+        .watch-party-mode .youtube-input-row {
+            display: grid !important;
+            grid-template-columns: 1fr auto !important;
+            gap: .5rem !important;
+        }
+
+        .watch-party-mode .youtube-control-row {
+            display: flex !important;
+            gap: .5rem !important;
+            overflow-x: auto !important;
+        }
+
+        .watch-party-mode .youtube-control-row .youtube-btn {
+            width: auto !important;
+            min-width: max-content !important;
+        }
+
+        .watch-party-mode .absolute.inset-0.flex.items-center.justify-center.opacity-5.pointer-events-none {
+            display: none !important;
+        }
+
+        @media (max-width: 767px) {
+            .watch-party-mode main {
+                height: 100% !important;
+            }
+
+            .watch-party-mode .mobile-chat-topbar {
+                display: flex !important;
+            }
+
+            .watch-party-mode #youtube-watch-box {
+                flex: 1 1 auto !important;
+            }
+
+            .watch-party-mode .youtube-watch-player-wrap {
+                min-height: 11.5rem !important;
+            }
+
+            .watch-party-mode .youtube-input-row {
+                grid-template-columns: 1fr 5.8rem !important;
+            }
+
+            .watch-party-mode .players-top-strip {
+                padding-left: .75rem !important;
+                padding-right: .75rem !important;
+            }
+        }
+
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex flex-col">
@@ -2034,7 +2161,7 @@
         </aside>
 
         <!-- Main Chat Area -->
-        <main class="flex-1 flex flex-col h-2/3 md:h-full relative min-h-0">
+        <main id="group-chat-main" class="flex-1 flex flex-col h-2/3 md:h-full relative min-h-0">
             <!-- Barra superior do chat no celular -->
             <div class="mobile-chat-topbar px-3 py-3 bg-black border-b border-neutral-800 items-center justify-between relative z-20 shrink-0">
                 <button onclick="openFriendsPanel()" class="w-11 h-11 rounded-xl bg-neutral-900 border border-neutral-700 hover:border-red-600 text-white flex items-center justify-center transition" title="Abrir painel de amigos" aria-label="Abrir painel de amigos">
@@ -3455,6 +3582,33 @@
         // ===============================
         // SISTEMA ASSISTIR YOUTUBE JUNTOS
         // ===============================
+
+        function getWatchPartyRoot() {
+            return document.getElementById('group-chat-main') || document.body;
+        }
+
+        function enterWatchPartyMode() {
+            const root = getWatchPartyRoot();
+            if (root) root.classList.add('watch-party-mode');
+
+            const btn = document.getElementById('youtube-watch-btn');
+            if (btn) btn.classList.add('youtube-active-btn');
+
+            showYouTubeWatch();
+            enterWatchPartyMode();
+
+            const messages = document.getElementById('chat-messages');
+            if (messages) messages.scrollTop = messages.scrollHeight;
+        }
+
+        function exitWatchPartyMode() {
+            const root = getWatchPartyRoot();
+            if (root) root.classList.remove('watch-party-mode');
+
+            const btn = document.getElementById('youtube-watch-btn');
+            if (btn && !youtubeCurrentVideoId) btn.classList.remove('youtube-active-btn');
+        }
+
         function ensureYouTubeApi() {
             if (youtubeApiReady || window.YT?.Player) {
                 youtubeApiReady = true;
@@ -3522,7 +3676,22 @@
             const box = document.getElementById('youtube-watch-box');
             if (!box) return;
 
-            box.classList.toggle('active');
+            const hasVideo = !!youtubeCurrentVideoId;
+
+            if (hasVideo) {
+                if (getWatchPartyRoot()?.classList.contains('watch-party-mode')) {
+                    exitWatchPartyMode();
+                    hideYouTubeWatch();
+                } else {
+                    enterWatchPartyMode();
+                }
+            } else {
+                box.classList.toggle('active');
+                if (box.classList.contains('active')) {
+                    const root = getWatchPartyRoot();
+                    if (root) root.classList.remove('watch-party-mode');
+                }
+            }
 
             if (box.classList.contains('active') && currentRoomId) {
                 socket.emit('youtube-get-state', { roomId: currentRoomId });
@@ -3547,6 +3716,8 @@
 
             if (box) box.classList.remove('active');
             if (btn && !youtubeCurrentVideoId) btn.classList.remove('youtube-active-btn');
+
+            exitWatchPartyMode();
         }
 
         function setYouTubeHeader(title, subtitle) {
@@ -3697,7 +3868,7 @@
             setYouTubePlaceholder(false);
 
             youtubeCurrentVideoId = state.videoId;
-            const byText = state.by ? `Controlado por ${state.by}` : 'Sincronizado com a sala';
+            const byText = state.by ? `Vídeo colocado por ${state.by}` : 'Sincronizado com a sala';
             setYouTubeHeader('Assistindo YouTube juntos', byText);
 
             let player;
@@ -3787,6 +3958,8 @@
                 const box = document.getElementById('youtube-watch-box');
                 if (box) box.classList.remove('active');
             }
+
+            exitWatchPartyMode();
         }
 
 

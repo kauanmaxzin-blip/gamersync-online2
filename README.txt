@@ -1,12 +1,12 @@
-GamerSync - YouTube corrigido no celular
+GamerSync - Modo assistir YouTube
 
-Correções:
-- painel do YouTube ficou compacto no celular
-- botão Assistir aparece ao lado do campo
-- teclado Enter/Go também carrega o vídeo
-- aceita link normal, youtu.be, shorts e live
-- mostra aviso carregando vídeo
-- player avisa se não conseguir carregar
+Novidade:
+- quando um vídeo do YouTube é colocado na sala, entra em modo assistir
+- o chat some
+- a telona do YouTube fica grande em cima
+- as bolinhas dos jogadores ficam embaixo
+- ficam os controles do vídeo e campo do link
+- ao fechar/minimizar o vídeo, o chat volta
 
 Substitua no GitHub:
 - index.html

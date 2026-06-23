@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "3.9.1",
-  "description": "GamerSync com YouTube mobile corrigido",
+  "version": "3.9.2",
+  "description": "GamerSync com modo assistir YouTube",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
