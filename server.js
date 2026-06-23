@@ -4,6 +4,8 @@ const { Server } = require("socket.io");
 const path = require("path");
 const crypto = require("crypto");
 
+const admin = require("firebase-admin");
+
 const app = express();
 const server = http.createServer(app);
 
@@ -13,13 +15,83 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 
+// Config web do Firebase para o navegador
+const FIREBASE_WEB_CONFIG = {
+  apiKey: process.env.FIREBASE_API_KEY || "",
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.FIREBASE_APP_ID || ""
+};
+
+// Credenciais do Firebase Admin para o servidor verificar o login real.
+// No Render, coloque FIREBASE_SERVICE_ACCOUNT_BASE64 com o JSON da Service Account em base64.
+// Se não usar base64, coloque FIREBASE_CLIENT_EMAIL e FIREBASE_PRIVATE_KEY.
+function initFirebaseAdmin() {
+  if (admin.apps.length) return;
+
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    const json = Buffer
+      .from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, "base64")
+      .toString("utf8");
+
+    const serviceAccount = JSON.parse(json);
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    return;
+  }
+
+  if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
+      })
+    });
+    return;
+  }
+
+  console.warn("Firebase Admin não configurado. Login real não será verificado no servidor.");
+  admin.initializeApp({
+    projectId: process.env.FIREBASE_PROJECT_ID || "demo"
+  });
+}
+
+initFirebaseAdmin();
+
+/*
+  ADM ESCOLHIDO POR CONTA GOOGLE/FIREBASE
+
+  Coloque aqui o EMAIL Google das contas que podem virar ADM.
+  Exemplo:
+  "seuemail@gmail.com": "adm123"
+*/
+const ADMIN_EMAIL_CODES = {
+  "seuemail@gmail.com": "adm123"
+};
+
+app.use(express.json({ limit: "1mb" }));
 app.use(express.static(__dirname));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
+app.get("/config", (req, res) => {
+  res.json({
+    firebaseConfig: FIREBASE_WEB_CONFIG
+  });
+});
+
 const rooms = new Map();
+
+function normalizeName(name) {
+  return String(name || "").trim();
+}
 
 function publicRoom(room) {
   return {
@@ -43,6 +115,10 @@ function getMember(room, socketId) {
   return room.members.find((member) => member.id === socketId) || null;
 }
 
+function getSocketName(socket, fallback = "Jogador") {
+  return normalizeName(socket.data?.account?.name || fallback).slice(0, 24) || "Jogador";
+}
+
 function sendMembers(roomId) {
   const room = rooms.get(roomId);
   if (!room) return;
@@ -53,6 +129,18 @@ function sendMembers(roomId) {
   }));
 
   io.to(roomId).emit("room-members", members);
+}
+
+function adminRooms() {
+  return Array.from(rooms.values()).map(publicRoom);
+}
+
+function emitAdminRooms() {
+  for (const socket of io.sockets.sockets.values()) {
+    if (socket.data && socket.data.isAdmin) {
+      socket.emit("admin-rooms-list", adminRooms());
+    }
+  }
 }
 
 function removeVoiceUser(socketId, roomId = null) {
@@ -95,11 +183,13 @@ function removeMemberFromAllRooms(socketId, skipRoomId = null) {
 
       sendMembers(roomId);
       sendRooms();
+      emitAdminRooms();
     }
 
     if (room.members.length === 0) {
       rooms.delete(roomId);
       sendRooms();
+      emitAdminRooms();
     }
   }
 }
@@ -112,13 +202,14 @@ function joinRoom(socket, { roomId, nick, password }) {
     return;
   }
 
-  const cleanNick = String(nick || "Jogador").trim().slice(0, 24);
+  const cleanNick = getSocketName(socket, nick);
   const alreadyInThisRoom = room.members.some((member) => member.id === socket.id);
 
   if (alreadyInThisRoom) {
     socket.emit("joined-room", publicRoom(room));
     sendMembers(roomId);
     sendRooms();
+    emitAdminRooms();
     return;
   }
 
@@ -141,7 +232,8 @@ function joinRoom(socket, { roomId, nick, password }) {
   room.members.push({
     id: socket.id,
     nick: cleanNick,
-    host: room.members.length === 0
+    host: room.members.length === 0,
+    googleEmail: socket.data?.account?.email || ""
   });
 
   socket.emit("joined-room", publicRoom(room));
@@ -156,6 +248,7 @@ function joinRoom(socket, { roomId, nick, password }) {
 
   sendMembers(roomId);
   sendRooms();
+  emitAdminRooms();
 }
 
 function leaveRoom(socket, roomId, nick) {
@@ -166,10 +259,12 @@ function leaveRoom(socket, roomId, nick) {
 
   socket.leave(roomId);
 
+  const cleanNick = getSocketName(socket, nick);
+
   room.members = room.members.filter((member) => member.id !== socket.id);
 
   socket.to(roomId).emit("server-message", {
-    message: `${nick || "Um jogador"} saiu da sala.`
+    message: `${cleanNick || "Um jogador"} saiu da sala.`
   });
 
   if (room.members.length > 0 && !room.members.some((member) => member.host)) {
@@ -183,6 +278,54 @@ function leaveRoom(socket, roomId, nick) {
   }
 
   sendRooms();
+  emitAdminRooms();
+}
+
+function closeRoomByAdmin(socket, roomId) {
+  if (!socket.data || !socket.data.isAdmin) {
+    socket.emit("admin-action-result", {
+      ok: false,
+      message: "Você não é ADM."
+    });
+    return;
+  }
+
+  const room = rooms.get(roomId);
+
+  if (!room) {
+    socket.emit("admin-action-result", {
+      ok: false,
+      message: "Essa sala não existe mais."
+    });
+    return;
+  }
+
+  io.to(roomId).emit("server-message", {
+    message: "Essa sala foi fechada por um ADM."
+  });
+
+  io.to(roomId).emit("room-closed", {
+    roomId,
+    name: room.name
+  });
+
+  for (const member of room.members) {
+    const memberSocket = io.sockets.sockets.get(member.id);
+    if (memberSocket) {
+      removeVoiceUser(member.id, roomId);
+      memberSocket.leave(roomId);
+    }
+  }
+
+  rooms.delete(roomId);
+
+  sendRooms();
+  emitAdminRooms();
+
+  socket.emit("admin-action-result", {
+    ok: true,
+    message: "Sala fechada com sucesso."
+  });
 }
 
 function relayVoice(socket, eventName, { roomId, to, offer, answer, candidate }) {
@@ -208,6 +351,30 @@ function relayVoice(socket, eventName, { roomId, to, offer, answer, candidate })
 
 io.on("connection", (socket) => {
   console.log("Jogador conectado:", socket.id);
+
+  socket.data.isAdmin = false;
+
+  socket.on("register-google-account", async ({ idToken }) => {
+    try {
+      const decoded = await admin.auth().verifyIdToken(idToken);
+
+      socket.data.account = {
+        uid: decoded.uid,
+        email: decoded.email || "",
+        name: decoded.name || (decoded.email ? decoded.email.split("@")[0] : "Jogador"),
+        picture: decoded.picture || ""
+      };
+
+      socket.emit("google-account-ok", {
+        account: socket.data.account
+      });
+    } catch (error) {
+      console.error("Token Firebase inválido:", error.message);
+      socket.emit("google-account-error", {
+        message: "Sessão Firebase inválida ou expirada."
+      });
+    }
+  });
 
   socket.on("get-rooms", () => {
     const list = Array.from(rooms.values()).map(publicRoom);
@@ -253,6 +420,7 @@ io.on("connection", (socket) => {
     });
 
     sendRooms();
+    emitAdminRooms();
   });
 
   socket.on("join-room", (data) => {
@@ -289,10 +457,69 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("chat-message", {
       roomId,
       senderId: socket.id,
-      nick: String(nick || "Jogador").slice(0, 24),
+      nick: getSocketName(socket, nick),
       text: cleanText,
       time
     });
+  });
+
+  socket.on("admin-login", ({ code }) => {
+    const account = socket.data && socket.data.account;
+
+    if (!account || !account.email) {
+      socket.data.isAdmin = false;
+      socket.emit("admin-status", {
+        isAdmin: false,
+        message: "Entre com Google/Firebase antes de ativar o ADM."
+      });
+      return;
+    }
+
+    const email = String(account.email).toLowerCase();
+    const expectedCode = ADMIN_EMAIL_CODES[email];
+
+    if (!expectedCode || expectedCode !== String(code || "").trim()) {
+      socket.data.isAdmin = false;
+      socket.emit("admin-status", {
+        isAdmin: false,
+        message: "Email Google ou código ADM inválido."
+      });
+      return;
+    }
+
+    socket.data.isAdmin = true;
+    socket.data.adminEmail = email;
+
+    socket.emit("admin-status", {
+      isAdmin: true,
+      email
+    });
+
+    socket.emit("admin-rooms-list", adminRooms());
+  });
+
+  socket.on("admin-logout", () => {
+    socket.data.isAdmin = false;
+    socket.data.adminEmail = "";
+    socket.emit("admin-status", {
+      isAdmin: false
+    });
+  });
+
+  socket.on("admin-get-rooms", () => {
+    if (!socket.data || !socket.data.isAdmin) {
+      socket.emit("admin-action-result", {
+        ok: false,
+        message: "Você não é ADM."
+      });
+      return;
+    }
+
+    socket.emit("admin-rooms-list", adminRooms());
+  });
+
+  socket.on("admin-close-room", ({ roomId }) => {
+    closeRoomByAdmin(socket, roomId);
   });
 
   socket.on("voice-join", ({ roomId, nick }) => {

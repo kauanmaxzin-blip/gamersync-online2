@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "2.6.0",
-  "description": "GamerSync com logo personalizada no topo",
+  "version": "3.1.0",
+  "description": "GamerSync com Firebase Authentication",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "express": "^4.18.3",
-    "socket.io": "^4.7.5"
+    "socket.io": "^4.7.5",
+    "firebase-admin": "^12.7.0"
   }
 }
