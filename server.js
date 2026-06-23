@@ -44,11 +44,14 @@ function sendRooms(game = null) {
 function sendMembers(roomId) {
   const room = rooms.get(roomId);
   if (!room) return;
+
   io.to(roomId).emit("room-members", room.members);
 }
 
-function removeMemberFromAllRooms(socketId) {
+function removeMemberFromAllRooms(socketId, skipRoomId = null) {
   for (const [roomId, room] of rooms.entries()) {
+    if (skipRoomId && roomId === skipRoomId) continue;
+
     const before = room.members.length;
     room.members = room.members.filter((member) => member.id !== socketId);
 
@@ -72,109 +75,22 @@ function removeMemberFromAllRooms(socketId) {
   }
 }
 
-io.on("connection", (socket) => {
-  console.log("Jogador conectado:", socket.id);
-
-  socket.on("get-rooms", ({ game } = {}) => {
-    const list = Array.from(rooms.values())
-      .filter((room) => !game || room.game === game)
-      .map(publicRoom);
-
-    socket.emit("rooms-list", list);
-  });
-
-  socket.on("create-room", ({ game, name, type, password, nick }) => {
-    const cleanName = String(name || "").trim().slice(0, 40);
-    const cleanGame = String(game || "Minecraft").trim().slice(0, 30);
-    const cleanType = type === "private" ? "private" : "public";
-    const cleanPassword = String(password || "").trim().slice(0, 40);
-
-    if (!cleanName) {
-      socket.emit("join-error", { message: "Coloque um nome para a sala." });
-      return;
-    }
-
-    if (cleanType === "private" && !cleanPassword) {
-      socket.emit("join-error", { message: "Sala privada precisa de senha." });
-      return;
-    }
-
-    const id = crypto.randomBytes(8).toString("hex");
-
-    const room = {
-      id,
-      name: cleanName,
-      game: cleanGame,
-      type: cleanType,
-      password: cleanPassword,
-      maxPlayers: 5,
-      members: [],
-      createdAt: Date.now()
-    };
-
-    rooms.set(id, room);
-
-    socket.emit("room-created", publicRoom(room));
-
-    // Depois de criar, o próprio criador entra na sala.
-    joinRoom(socket, {
-      roomId: id,
-      nick: nick || "Jogador",
-      password: cleanPassword
-    });
-
-    sendRooms(cleanGame);
-  });
-
-  socket.on("join-room", (data) => {
-    joinRoom(socket, data);
-  });
-
-  socket.on("leave-room", ({ roomId, nick }) => {
-    leaveRoom(socket, roomId, nick);
-  });
-
-  socket.on("chat-message", ({ roomId, nick, text }) => {
-    const room = rooms.get(roomId);
-    if (!room) {
-      socket.emit("join-error", { message: "Essa sala não existe mais." });
-      return;
-    }
-
-    const isMember = room.members.some((member) => member.id === socket.id);
-    if (!isMember) {
-      socket.emit("join-error", { message: "Você não está nessa sala." });
-      return;
-    }
-
-    const cleanText = String(text || "").trim().slice(0, 300);
-    if (!cleanText) return;
-
-    const time = new Date().toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-
-    // Envia somente para quem está nessa sala.
-    io.to(roomId).emit("chat-message", {
-      roomId,
-      nick: String(nick || "Jogador").slice(0, 24),
-      text: cleanText,
-      time
-    });
-  });
-
-  socket.on("disconnect", () => {
-    console.log("Jogador desconectou:", socket.id);
-    removeMemberFromAllRooms(socket.id);
-  });
-});
-
 function joinRoom(socket, { roomId, nick, password }) {
   const room = rooms.get(roomId);
 
   if (!room) {
     socket.emit("join-error", { message: "Essa sala não existe mais." });
+    return;
+  }
+
+  const cleanNick = String(nick || "Jogador").trim().slice(0, 24);
+
+  const alreadyInThisRoom = room.members.some((member) => member.id === socket.id);
+
+  if (alreadyInThisRoom) {
+    socket.emit("joined-room", publicRoom(room));
+    sendMembers(roomId);
+    sendRooms(room.game);
     return;
   }
 
@@ -190,12 +106,9 @@ function joinRoom(socket, { roomId, nick, password }) {
     return;
   }
 
-  // O jogador fica em apenas uma sala por vez.
-  removeMemberFromAllRooms(socket.id);
+  removeMemberFromAllRooms(socket.id, roomId);
 
   socket.join(roomId);
-
-  const cleanNick = String(nick || "Jogador").trim().slice(0, 24);
 
   room.members.push({
     id: socket.id,
@@ -241,6 +154,102 @@ function leaveRoom(socket, roomId, nick) {
 
   sendRooms(room.game);
 }
+
+io.on("connection", (socket) => {
+  console.log("Jogador conectado:", socket.id);
+
+  socket.on("get-rooms", ({ game } = {}) => {
+    const list = Array.from(rooms.values())
+      .filter((room) => !game || room.game === game)
+      .map(publicRoom);
+
+    socket.emit("rooms-list", list);
+  });
+
+  socket.on("create-room", ({ game, name, type, password, nick }) => {
+    const cleanName = String(name || "").trim().slice(0, 40);
+    const cleanGame = String(game || "Minecraft").trim().slice(0, 30);
+    const cleanType = type === "private" ? "private" : "public";
+    const cleanPassword = String(password || "").trim().slice(0, 40);
+
+    if (!cleanName) {
+      socket.emit("join-error", { message: "Coloque um nome para a sala." });
+      return;
+    }
+
+    if (cleanType === "private" && !cleanPassword) {
+      socket.emit("join-error", { message: "Sala privada precisa de senha." });
+      return;
+    }
+
+    const id = crypto.randomBytes(8).toString("hex");
+
+    const room = {
+      id,
+      name: cleanName,
+      game: cleanGame,
+      type: cleanType,
+      password: cleanPassword,
+      maxPlayers: 5,
+      members: [],
+      createdAt: Date.now()
+    };
+
+    rooms.set(id, room);
+
+    joinRoom(socket, {
+      roomId: id,
+      nick: nick || "Jogador",
+      password: cleanPassword
+    });
+
+    sendRooms(cleanGame);
+  });
+
+  socket.on("join-room", (data) => {
+    joinRoom(socket, data);
+  });
+
+  socket.on("leave-room", ({ roomId, nick }) => {
+    leaveRoom(socket, roomId, nick);
+  });
+
+  socket.on("chat-message", ({ roomId, nick, text }) => {
+    const room = rooms.get(roomId);
+
+    if (!room) {
+      socket.emit("join-error", { message: "Essa sala não existe mais." });
+      return;
+    }
+
+    const isMember = room.members.some((member) => member.id === socket.id);
+
+    if (!isMember) {
+      socket.emit("join-error", { message: "Você não está nessa sala." });
+      return;
+    }
+
+    const cleanText = String(text || "").trim().slice(0, 300);
+    if (!cleanText) return;
+
+    const time = new Date().toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    io.to(roomId).emit("chat-message", {
+      roomId,
+      nick: String(nick || "Jogador").slice(0, 24),
+      text: cleanText,
+      time
+    });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Jogador desconectou:", socket.id);
+    removeMemberFromAllRooms(socket.id);
+  });
+});
 
 server.listen(PORT, () => {
   console.log(`GamerSync rodando na porta ${PORT}`);
