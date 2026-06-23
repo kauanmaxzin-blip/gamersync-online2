@@ -1150,6 +1150,36 @@
             }
         }
 
+
+        /* Correção final do painel de emoji */
+        .emoji-picker {
+            position: fixed !important;
+            left: 12px !important;
+            right: 12px !important;
+            bottom: 84px !important;
+            z-index: 999999 !important;
+            display: none;
+            max-height: 260px;
+            overflow-y: auto;
+            padding: .85rem;
+            border-radius: 1rem;
+            background: rgba(10, 10, 10, .98);
+            border: 1px solid rgba(220, 38, 38, .5);
+            box-shadow: 0 18px 55px rgba(0,0,0,.85);
+            backdrop-filter: blur(10px);
+        }
+
+        .emoji-picker.active {
+            display: block !important;
+        }
+
+        @media (max-width: 767px) {
+            .emoji-picker {
+                bottom: 88px !important;
+                max-height: 240px !important;
+            }
+        }
+
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex flex-col">
@@ -1797,6 +1827,8 @@
 
             goToScreen('screen-group');
             addSystemMessage(`Você entrou em ${room.name}.`);
+            socket.emit('get-room-history', { roomId: currentRoomId });
+            setTimeout(() => socket.emit('get-room-history', { roomId: currentRoomId }), 500);
             closeRoomModal();
         });
 
@@ -1814,17 +1846,24 @@
 
         socket.on('room-history', (data) => {
             const messages = data.messages || [];
+            const chatBox = document.getElementById('chat-messages');
 
-            chatMessages.innerHTML = '';
+            if (!chatBox) return;
 
-            if (messages.length === 0) {
+            chatBox.innerHTML = '';
+
+            addSystemMessage('Você entrou na sala.');
+
+            if (messages.length > 0) {
+                messages.forEach((message) => {
+                    addChatMessage(message);
+                });
+
+                addSystemMessage('Histórico recente carregado.');
+            } else {
                 addSystemMessage('Nenhuma mensagem antiga nesta sala.');
-                return;
             }
-
-            messages.forEach((message) => {
-                addChatMessage(message);
-            });
+        });
 
             addSystemMessage('Você carregou o histórico recente da sala.');
         });
@@ -2708,6 +2747,19 @@
             buildEmojiPicker();
 
             const picker = document.getElementById('emoji-picker');
+            if (!picker) {
+                showToast('Painel de emoji não encontrado.', 'error');
+                return;
+            }
+
+            picker.classList.toggle('active');
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+            buildEmojiPicker();
+
+            const picker = document.getElementById('emoji-picker');
             if (!picker) return;
 
             picker.classList.toggle('active');
@@ -2776,6 +2828,7 @@
 
         // Função de navegação entre telas
         function goToScreen(screenId) {
+            closeEmojiPicker();
             closeFriendsPanel();
 
             // Esconde todas as telas
