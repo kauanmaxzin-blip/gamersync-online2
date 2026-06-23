@@ -1048,7 +1048,7 @@
                     <div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
                     <div class="absolute bottom-4 left-4">
                         <h3 class="text-2xl font-bold text-white mb-1 drop-shadow-md">Minecraft</h3>
-                        <span class="text-xs font-semibold bg-red-600 text-white px-2 py-1 rounded">24 Salas Ativas</span>
+                        <span class="text-xs font-semibold bg-red-600 text-white px-2 py-1 rounded"><span id="count-minecraft">0</span> Salas Ativas</span>
                     </div>
                 </div>
 
@@ -1057,7 +1057,7 @@
                     <div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
                     <div class="absolute bottom-4 left-4">
                         <h3 class="text-2xl font-bold text-white mb-1 drop-shadow-md">Free Fire</h3>
-                        <span class="text-xs font-semibold bg-red-600 text-white px-2 py-1 rounded">58 Salas Ativas</span>
+                        <span class="text-xs font-semibold bg-red-600 text-white px-2 py-1 rounded"><span id="count-freefire">0</span> Salas Ativas</span>
                     </div>
                 </div>
 
@@ -1066,7 +1066,7 @@
                     <div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
                     <div class="absolute bottom-4 left-4">
                         <h3 class="text-2xl font-bold text-white mb-1 drop-shadow-md">Roblox</h3>
-                        <span class="text-xs font-semibold bg-red-600 text-white px-2 py-1 rounded">12 Salas Ativas</span>
+                        <span class="text-xs font-semibold bg-red-600 text-white px-2 py-1 rounded"><span id="count-roblox">0</span> Salas Ativas</span>
                     </div>
                 </div>
 
@@ -1075,7 +1075,7 @@
                     <div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
                     <div class="absolute bottom-4 left-4">
                         <h3 class="text-2xl font-bold text-white mb-1 drop-shadow-md">Valorant</h3>
-                        <span class="text-xs font-semibold bg-red-600 text-white px-2 py-1 rounded">35 Salas Ativas</span>
+                        <span class="text-xs font-semibold bg-red-600 text-white px-2 py-1 rounded"><span id="count-valorant">0</span> Salas Ativas</span>
                     </div>
                 </div>
             </div>
@@ -1377,7 +1377,7 @@
 
         socket.on('connect', () => {
             updateConnectionStatus('Online no servidor');
-            refreshRooms();
+            socket.emit('get-rooms', {});
         });
 
         socket.on('disconnect', () => {
@@ -1385,6 +1385,7 @@
         });
 
         socket.on('rooms-list', (rooms) => {
+            updateGameRoomCounts(rooms || []);
             renderRooms(rooms || []);
         });
 
@@ -1450,8 +1451,7 @@
         }
 
         function refreshRooms() {
-            if (!currentGame) return;
-            socket.emit('get-rooms', { game: currentGame });
+            socket.emit('get-rooms', {});
         }
 
         function openCreateRoomModal(type) {
@@ -1561,6 +1561,34 @@
                 roomId,
                 nick: myNick,
                 password
+            });
+        }
+
+
+        function updateGameRoomCounts(rooms) {
+            const counts = {
+                Minecraft: 0,
+                "Free Fire": 0,
+                Roblox: 0,
+                Valorant: 0
+            };
+
+            (rooms || []).forEach((room) => {
+                if (counts[room.game] !== undefined) {
+                    counts[room.game]++;
+                }
+            });
+
+            const map = {
+                Minecraft: "count-minecraft",
+                "Free Fire": "count-freefire",
+                Roblox: "count-roblox",
+                Valorant: "count-valorant"
+            };
+
+            Object.entries(map).forEach(([game, id]) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = counts[game];
             });
         }
 
@@ -1909,6 +1937,7 @@
                 event.preventDefault();
                 event.stopPropagation();
             }
+            refreshRooms();
             goToScreen('screen-home');
         }
 

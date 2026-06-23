@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "2.2.0",
-  "description": "GamerSync com conta salva e sair da conta",
+  "version": "2.3.0",
+  "description": "GamerSync com contador real de salas ativas",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

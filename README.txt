@@ -1,11 +1,10 @@
-GamerSync - Conta Salva
+GamerSync - Salas Ativas Reais
 
 Mudanças:
-- quando a pessoa entra/cria conta, a conta fica salva no aparelho
-- ao abrir o app de novo, entra direto sem pedir nome e senha
-- botão Meu Perfil abre perfil da conta
-- botão Sair da conta remove a conta salva
-- nome do jogador não muda ao criar sala
+- os cards dos jogos não mostram mais números falsos
+- Minecraft, Free Fire, Roblox e Valorant mostram a quantidade real de salas abertas
+- o servidor manda a lista real de salas para todos
+- a tela do jogo continua filtrando só as salas daquele jogo
 
 Substitua no GitHub:
 - index.html

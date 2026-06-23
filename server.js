@@ -33,11 +33,8 @@ function publicRoom(room) {
   };
 }
 
-function sendRooms(game = null) {
-  const allRooms = Array.from(rooms.values())
-    .filter((room) => !game || room.game === game)
-    .map(publicRoom);
-
+function sendRooms() {
+  const allRooms = Array.from(rooms.values()).map(publicRoom);
   io.emit("rooms-list", allRooms);
 }
 
@@ -160,11 +157,8 @@ function leaveRoom(socket, roomId, nick) {
 io.on("connection", (socket) => {
   console.log("Jogador conectado:", socket.id);
 
-  socket.on("get-rooms", ({ game } = {}) => {
-    const list = Array.from(rooms.values())
-      .filter((room) => !game || room.game === game)
-      .map(publicRoom);
-
+  socket.on("get-rooms", () => {
+    const list = Array.from(rooms.values()).map(publicRoom);
     socket.emit("rooms-list", list);
   });
 
