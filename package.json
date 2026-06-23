@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "2.4.0",
-  "description": "GamerSync com microfone e voz em tempo real por sala",
+  "version": "2.5.0",
+  "description": "GamerSync com sistema de emojis no chat",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
