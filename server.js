@@ -5,6 +5,7 @@ const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
+
 const io = new Server(server, {
   cors: {
     origin: "*"
@@ -13,8 +14,13 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 
-// Arquivos do app
-app.use(express.static(path.join(__dirname, "public")));
+// Serve os arquivos do app
+app.use(express.static(__dirname));
+
+// Abre o app na página inicial
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
 const rooms = new Map();
 
@@ -28,6 +34,7 @@ function getRoom(roomName) {
       members: []
     });
   }
+
   return rooms.get(roomName);
 }
 
@@ -41,12 +48,14 @@ function sendMembers(roomName) {
 function removeMember(socketId) {
   for (const [roomName, room] of rooms.entries()) {
     const before = room.members.length;
+
     room.members = room.members.filter((member) => member.id !== socketId);
 
     if (before !== room.members.length) {
       io.to(roomName).emit("server-message", {
         message: "Um jogador saiu da sala."
       });
+
       sendMembers(roomName);
     }
 
@@ -77,7 +86,11 @@ io.on("connection", (socket) => {
       roomData.password = password || "";
     }
 
-    if (roomData.type === "private" && roomData.password && password !== roomData.password) {
+    if (
+      roomData.type === "private" &&
+      roomData.password &&
+      password !== roomData.password
+    ) {
       socket.emit("server-message", {
         message: "Senha da sala incorreta."
       });
@@ -86,7 +99,10 @@ io.on("connection", (socket) => {
 
     socket.join(room);
 
-    const alreadyInRoom = roomData.members.some((member) => member.id === socket.id);
+    const alreadyInRoom = roomData.members.some(
+      (member) => member.id === socket.id
+    );
+
     if (!alreadyInRoom) {
       roomData.members.push({
         id: socket.id,
@@ -112,8 +128,11 @@ io.on("connection", (socket) => {
     socket.leave(room);
 
     const roomData = rooms.get(room);
+
     if (roomData) {
-      roomData.members = roomData.members.filter((member) => member.id !== socket.id);
+      roomData.members = roomData.members.filter(
+        (member) => member.id !== socket.id
+      );
 
       socket.to(room).emit("server-message", {
         message: `${nick || "Um jogador"} saiu da sala.`
@@ -131,6 +150,7 @@ io.on("connection", (socket) => {
     if (!room || !nick || !text) return;
 
     const cleanText = String(text).slice(0, 300);
+
     const time = new Date().toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit"
@@ -150,5 +170,5 @@ io.on("connection", (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`GamerSync rodando em http://localhost:${PORT}`);
+  console.log(`GamerSync rodando na porta ${PORT}`);
 });
