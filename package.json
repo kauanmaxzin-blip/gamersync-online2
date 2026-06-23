@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "2.1.0",
-  "description": "GamerSync com mensagens separadas por jogador",
+  "version": "2.2.0",
+  "description": "GamerSync com conta salva e sair da conta",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

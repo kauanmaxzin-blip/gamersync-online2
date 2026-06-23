@@ -851,6 +851,15 @@
             }
         }
 
+
+        /* Conta salva e perfil */
+        .saved-account-note {
+            margin-top: 1rem;
+            font-size: .8rem;
+            color: #a3a3a3;
+            text-align: center;
+        }
+
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex flex-col">
@@ -892,11 +901,11 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm text-neutral-400 mb-1">Nome de Utilizador</label>
-                    <input type="text" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-600 transition" placeholder="O teu nick">
+                    <input id="login-username" type="text" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-600 transition" placeholder="O teu nick">
                 </div>
                 <div>
                     <label class="block text-sm text-neutral-400 mb-1">Palavra-passe</label>
-                    <input type="password" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-600 transition" placeholder="••••••••">
+                    <input id="login-password" type="password" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-600 transition" placeholder="••••••••">
                 </div>
                 <button onclick="login()" class="w-full mt-4 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition shadow-[0_0_10px_rgba(220,38,38,0.3)]">
                     Entrar no App
@@ -923,15 +932,15 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm text-neutral-400 mb-1">Como queres ser chamado? (Nome/Nick)</label>
-                    <input type="text" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-600 transition" placeholder="Ex: ProGamer">
+                    <input id="signup-username" type="text" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-600 transition" placeholder="Ex: ProGamer">
                 </div>
                 <div>
                     <label class="block text-sm text-neutral-400 mb-1">Palavra-passe</label>
-                    <input type="password" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-600 transition" placeholder="Cria uma senha forte">
+                    <input id="signup-password" type="password" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-600 transition" placeholder="Cria uma senha forte">
                 </div>
                 <div>
                     <label class="block text-sm text-neutral-400 mb-1">Confirma a Palavra-passe</label>
-                    <input type="password" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-600 transition" placeholder="Repete a senha">
+                    <input id="signup-password-confirm" type="password" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-600 transition" placeholder="Repete a senha">
                 </div>
                 <button onclick="goToScreen('screen-signup-2')" class="w-full mt-4 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition flex justify-center items-center gap-2">
                     Ir para a Segunda Etapa <i data-lucide="arrow-right" class="w-5 h-5"></i>
@@ -1000,7 +1009,7 @@
                 <button class="p-3 border border-neutral-700 rounded-lg hover:border-red-600 hover:bg-red-600/10 transition text-center focus:border-red-600 focus:bg-red-600/20">Valorant</button>
             </div>
                 
-            <button onclick="login()" class="w-full py-3 bg-white text-black font-bold rounded-lg hover:bg-neutral-200 transition flex justify-center items-center gap-2">
+            <button onclick="createAccount()" class="w-full py-3 bg-white text-black font-bold rounded-lg hover:bg-neutral-200 transition flex justify-center items-center gap-2">
                 Criar Conta e Entrar <i data-lucide="check-circle" class="w-5 h-5"></i>
             </button>
         </div>
@@ -1021,10 +1030,10 @@
                     <i data-lucide="bell" class="w-6 h-6"></i>
                     <span class="absolute top-0 right-0 w-2 h-2 bg-red-600 rounded-full"></span>
                 </button>
-                <div class="flex items-center gap-2 bg-neutral-800 px-3 py-1.5 rounded-full cursor-pointer hover:bg-neutral-700 transition">
+                <button onclick="openProfileModal()" class="flex items-center gap-2 bg-neutral-800 px-3 py-1.5 rounded-full cursor-pointer hover:bg-neutral-700 transition" title="Meu Perfil">
                     <img src="https://ui-avatars.com/api/?name=User&background=dc2626&color=fff" alt="Avatar" class="w-6 h-6 rounded-full">
-                    <span class="text-sm font-medium profile-text">O Teu Perfil</span>
-                </div>
+                    <span id="profile-name" class="text-sm font-medium profile-text">Meu Perfil</span>
+                </button>
             </div>
         </header>
 
@@ -1314,6 +1323,36 @@
         </main>
     </div>
 
+
+    <!-- MODAL: MEU PERFIL -->
+    <div id="profile-modal-backdrop" class="modal-backdrop">
+        <div class="room-modal">
+            <div class="flex items-center justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="text-2xl font-bold">Meu Perfil</h2>
+                    <p class="text-sm text-neutral-400">Conta salva neste aparelho.</p>
+                </div>
+                <button onclick="closeProfileModal()" class="w-10 h-10 rounded-full bg-neutral-800 hover:bg-red-600 flex items-center justify-center transition" aria-label="Fechar perfil">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 mb-4 flex items-center gap-3">
+                <img id="profile-avatar" src="https://ui-avatars.com/api/?name=User&background=dc2626&color=fff" class="w-14 h-14 rounded-full">
+                <div class="min-w-0">
+                    <p id="profile-modal-name" class="font-bold text-white text-lg truncate">Jogador</p>
+                    <p class="text-xs text-green-500">Conta conectada</p>
+                </div>
+            </div>
+
+            <button onclick="logoutAccount()" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition flex items-center justify-center gap-2">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+                Sair da conta
+            </button>
+        </div>
+    </div>
+
+
     <!-- Scripts do App -->
     <script>
         // Inicializar ícones Lucide
@@ -1393,32 +1432,18 @@
         }
 
         function getNickFromInputs() {
-            const savedNick = localStorage.getItem('gamersync_nick');
+            const account = getSavedAccount();
 
-            // Se o jogador já tem nick salvo, não pega o nome da sala por engano.
-            if (savedNick && savedNick.trim().length >= 2) {
-                myNick = savedNick.trim();
+            if (account && account.username) {
+                myNick = account.username;
+                localStorage.setItem('gamersync_nick', myNick);
                 return myNick;
             }
 
-            const loginScreens = [
-                document.getElementById('screen-login-form'),
-                document.getElementById('screen-signup-1')
-            ];
-
-            for (const screen of loginScreens) {
-                if (!screen) continue;
-
-                const inputs = screen.querySelectorAll('input[type="text"]');
-                for (const input of inputs) {
-                    const value = input.value.trim();
-
-                    if (value.length >= 2) {
-                        myNick = value.slice(0, 24);
-                        localStorage.setItem('gamersync_nick', myNick);
-                        return myNick;
-                    }
-                }
+            const savedNick = localStorage.getItem('gamersync_nick');
+            if (savedNick && savedNick.trim().length >= 2) {
+                myNick = savedNick.trim().slice(0, 24);
+                return myNick;
             }
 
             return myNick;
@@ -1705,8 +1730,131 @@
         }
 
 
+
+        // ===============================
+        // SISTEMA DE CONTA SALVA
+        // ===============================
+        function getSavedAccount() {
+            try {
+                return JSON.parse(localStorage.getItem('gamersync_account') || 'null');
+            } catch {
+                return null;
+            }
+        }
+
+        function saveAccount(username, password = '') {
+            const account = {
+                username: String(username || '').trim().slice(0, 24),
+                password: String(password || ''),
+                savedAt: Date.now()
+            };
+
+            if (!account.username) return false;
+
+            localStorage.setItem('gamersync_account', JSON.stringify(account));
+            localStorage.setItem('gamersync_nick', account.username);
+            myNick = account.username;
+            updateProfileUI();
+            return true;
+        }
+
+        function autoLoginSavedAccount() {
+            const account = getSavedAccount();
+
+            if (account && account.username) {
+                myNick = account.username;
+                localStorage.setItem('gamersync_nick', myNick);
+                updateProfileUI();
+
+                setTimeout(() => {
+                    goToScreen('screen-home');
+                    showToast(`Bem-vindo de volta, ${myNick}!`, 'success');
+                }, 250);
+            } else {
+                updateProfileUI();
+            }
+        }
+
+        function createAccount() {
+            const username = document.getElementById('signup-username')?.value.trim();
+            const password = document.getElementById('signup-password')?.value || '';
+            const confirm = document.getElementById('signup-password-confirm')?.value || '';
+
+            if (!username || username.length < 2) {
+                showToast('Coloque um nome de usuário.', 'error');
+                goToScreen('screen-signup-1');
+                return;
+            }
+
+            if (!password || password.length < 3) {
+                showToast('Coloque uma senha com pelo menos 3 letras.', 'error');
+                goToScreen('screen-signup-1');
+                return;
+            }
+
+            if (password !== confirm) {
+                showToast('As senhas não são iguais.', 'error');
+                goToScreen('screen-signup-1');
+                return;
+            }
+
+            saveAccount(username, password);
+            showToast('Conta criada e salva!', 'success');
+            goToScreen('screen-home');
+        }
+
+        function openProfileModal() {
+            updateProfileUI();
+            const modal = document.getElementById('profile-modal-backdrop');
+            if (modal) modal.classList.add('active');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profile-modal-backdrop');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function logoutAccount() {
+            if (!confirm('Quer sair da conta? Na próxima vez será preciso entrar de novo.')) return;
+
+            localStorage.removeItem('gamersync_account');
+            localStorage.removeItem('gamersync_nick');
+
+            myNick = 'Jogador' + Math.floor(Math.random() * 9999);
+            currentRoomId = '';
+            currentRoomName = '';
+
+            closeProfileModal();
+            closeFriendsPanel();
+
+            document.querySelectorAll('input').forEach(input => input.value = '');
+
+            showToast('Você saiu da conta.', 'info');
+            goToScreen('screen-login');
+            updateProfileUI();
+        }
+
+        function updateProfileUI() {
+            const account = getSavedAccount();
+            const name = account?.username || myNick || 'Jogador';
+
+            const profileName = document.getElementById('profile-name');
+            if (profileName) profileName.innerText = name;
+
+            const modalName = document.getElementById('profile-modal-name');
+            if (modalName) modalName.innerText = name;
+
+            const profileAvatar = document.getElementById('profile-avatar');
+            if (profileAvatar) {
+                profileAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=dc2626&color=fff`;
+            }
+        }
+
+
         // Ajuste extra para celular: quando o teclado abrir, mantém o campo de mensagem visível
         window.addEventListener('load', () => {
+            autoLoginSavedAccount();
             const chatInput = document.getElementById('chat-input');
             const chatBox = document.getElementById('chat-messages');
 
@@ -1766,8 +1914,27 @@
 
         // Função mockada de Login
         function login() {
-            getNickFromInputs();
-            showToast('Sessão iniciada com sucesso!', 'success');
+            const username = document.getElementById('login-username')?.value.trim();
+            const password = document.getElementById('login-password')?.value || '';
+            const saved = getSavedAccount();
+
+            if (!username || username.length < 2) {
+                showToast('Coloque seu nome de usuário.', 'error');
+                return;
+            }
+
+            if (!password || password.length < 3) {
+                showToast('Coloque sua senha.', 'error');
+                return;
+            }
+
+            if (saved && saved.username === username && saved.password && saved.password !== password) {
+                showToast('Senha incorreta.', 'error');
+                return;
+            }
+
+            saveAccount(username, password);
+            showToast('Sessão iniciada e conta salva!', 'success');
             goToScreen('screen-home');
         }
 

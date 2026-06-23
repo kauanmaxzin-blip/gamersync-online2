@@ -1,8 +1,11 @@
-Correção:
-- mensagens suas aparecem na direita
-- mensagens dos outros aparecem na esquerda
-- o app usa ID da conexão, não o nome
-- evita pegar nome da sala como nome do jogador
+GamerSync - Conta Salva
+
+Mudanças:
+- quando a pessoa entra/cria conta, a conta fica salva no aparelho
+- ao abrir o app de novo, entra direto sem pedir nome e senha
+- botão Meu Perfil abre perfil da conta
+- botão Sair da conta remove a conta salva
+- nome do jogador não muda ao criar sala
 
 Substitua no GitHub:
 - index.html
