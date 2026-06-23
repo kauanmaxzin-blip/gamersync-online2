@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "3.6.0",
-  "description": "GamerSync com bolas dos players e efeito de voz no topo",
+  "version": "3.7.0",
+  "description": "GamerSync com microfone e bolinha de voz mais estáveis",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

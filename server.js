@@ -170,6 +170,12 @@ function removeVoiceUser(socketId, roomId = null) {
       const member = getMember(room, socketId);
       room.voiceUsers.delete(socketId);
 
+      io.to(id).emit("voice-speaking", {
+        id: socketId,
+        nick: member ? member.nick : "Jogador",
+        speaking: false
+      });
+
       io.to(id).emit("voice-user-left", {
         id: socketId,
         nick: member ? member.nick : "Jogador"
@@ -581,6 +587,26 @@ io.on("connection", (socket) => {
 
   socket.on("voice-leave", ({ roomId }) => {
     removeVoiceUser(socket.id, roomId);
+  });
+
+
+  socket.on("voice-speaking", ({ roomId, speaking }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const member = getMember(room, socket.id);
+    if (!member) return;
+
+    // Só marca falando se a pessoa realmente estiver na chamada de voz.
+    if (!room.voiceUsers || !room.voiceUsers.has(socket.id)) {
+      speaking = false;
+    }
+
+    socket.to(roomId).emit("voice-speaking", {
+      id: socket.id,
+      nick: member.nick,
+      speaking: !!speaking
+    });
   });
 
   socket.on("voice-offer", (data) => {

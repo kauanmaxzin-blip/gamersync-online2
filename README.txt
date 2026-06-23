@@ -1,11 +1,12 @@
-GamerSync - versão corrigida
+GamerSync - Microfone e bolinha mais estáveis
 
 Correções:
-- tela de login não fica mais travada
-- botão Entrar com Google carrega
-- salas sincronizam para quem entra depois
-- histórico da sala carrega para quem entra depois
-- emoji abre e aparece no chat
+- trava contra clique duplo no botão do microfone
+- se o microfone falhar, o botão volta ao normal
+- se a conexão de voz cair, tenta reconectar
+- bolinha de fala agora recebe sinal pelo servidor
+- ao sair/desligar o mic, o efeito da bolinha limpa
+- ao voltar para a aba, o app ressincroniza a voz
 
 Substitua no GitHub:
 - index.html

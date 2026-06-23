@@ -2054,10 +2054,16 @@
         });
 
         socket.on('voice-user-left', (user) => {
-            closeVoicePeer(user.id);
+            closeVoicePeer(user.id, true);
+            setPlayerSpeaking(user.id, false, true);
             if (voiceEnabled) {
                 showToast(`${user.nick || 'Um jogador'} saiu da voz.`, 'info');
             }
+        });
+
+        socket.on('voice-speaking', (data) => {
+            if (!data || !data.id) return;
+            setPlayerSpeaking(data.id, !!data.speaking, true);
         });
 
         socket.on('voice-offer', async ({ from, nick, offer }) => {
@@ -3085,11 +3091,15 @@
 
         let localVoiceStream = null;
         let voiceEnabled = false;
+        let voiceConnecting = false;
         const voicePeers = new Map();
         const remoteVoiceAudios = new Map();
         let roomMembersCache = [];
         const speakingUsers = new Set();
         const voiceAnalyserLoops = new Map();
+        const voiceReconnectTimers = new Map();
+        let lastLocalSpeakingState = false;
+        let lastLocalSpeakingEmit = 0;
 
         function getPlayerAvatarUrl(member) {
             const baseColor = member && member.id === socket.id ? 'dc2626' : '222';
@@ -3135,7 +3145,7 @@
             });
         }
 
-        function setPlayerSpeaking(playerId, isSpeaking) {
+        function setPlayerSpeaking(playerId, isSpeaking, fromServer = false) {
             if (!playerId) return;
 
             if (isSpeaking) speakingUsers.add(playerId);
@@ -3144,6 +3154,19 @@
             document.querySelectorAll(`.player-orb-card[data-player-id="${playerId}"]`).forEach((el) => {
                 el.classList.toggle('speaking', !!isSpeaking);
             });
+
+            // Para a bolinha dos outros celulares acender também.
+            if (!fromServer && playerId === socket.id && voiceEnabled && currentRoomId) {
+                const now = Date.now();
+                if (lastLocalSpeakingState !== !!isSpeaking || now - lastLocalSpeakingEmit > 900) {
+                    lastLocalSpeakingState = !!isSpeaking;
+                    lastLocalSpeakingEmit = now;
+                    socket.emit('voice-speaking', {
+                        roomId: currentRoomId,
+                        speaking: !!isSpeaking
+                    });
+                }
+            }
         }
 
         function stopVoiceAnalyser(playerId) {
@@ -3199,6 +3222,8 @@
         }
 
         async function toggleMic() {
+            if (voiceConnecting) return;
+
             if (voiceEnabled) {
                 stopVoiceChat(true);
             } else {
@@ -3212,10 +3237,15 @@
                 return;
             }
 
+            if (voiceConnecting || voiceEnabled) return;
+
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 showToast('Seu navegador não liberou microfone.', 'error');
                 return;
             }
+
+            voiceConnecting = true;
+            setVoiceButtons(true);
 
             try {
                 localVoiceStream = await navigator.mediaDevices.getUserMedia({
@@ -3227,7 +3257,18 @@
                     video: false
                 });
 
+                // Se o Android/Chrome matar o áudio, desliga limpo.
+                localVoiceStream.getTracks().forEach((track) => {
+                    track.onended = () => {
+                        if (voiceEnabled) {
+                            stopVoiceChat(true);
+                            showToast('O microfone foi encerrado pelo navegador.', 'info');
+                        }
+                    };
+                });
+
                 voiceEnabled = true;
+                voiceConnecting = false;
                 setVoiceButtons(true);
                 startVoiceAnalyser(socket.id, localVoiceStream, true);
 
@@ -3240,8 +3281,18 @@
                 addSystemMessage(`${myNick} entrou na chamada de voz.`);
             } catch (error) {
                 console.error(error);
-                showToast('Permita o microfone para falar com a galera.', 'error');
+                voiceEnabled = false;
+            voiceConnecting = false;
+                voiceConnecting = false;
+                localVoiceStream = null;
                 setVoiceButtons(false);
+            setPlayerSpeaking(socket.id, false);
+            socket.emit('voice-speaking', {
+                roomId: oldRoomId,
+                speaking: false
+            });
+                setPlayerSpeaking(socket.id, false);
+                showToast('Permita o microfone para falar com a galera.', 'error');
             }
         }
 
@@ -3260,7 +3311,11 @@
             stopVoiceAnalyser(socket.id);
 
             for (const peerId of Array.from(voicePeers.keys())) {
-                closeVoicePeer(peerId);
+                closeVoicePeer(peerId, true);
+            }
+
+            for (const peerId of Array.from(voiceReconnectTimers.keys())) {
+                clearVoiceReconnect(peerId);
             }
 
             if (oldRoomId) {
@@ -3297,6 +3352,34 @@
                 button.classList.toggle('voice-button-active', active);
                 button.title = active ? 'Desligar microfone' : 'Ligar microfone';
             });
+        }
+
+
+        function scheduleVoiceReconnect(peerId, nick = 'Jogador') {
+            if (!voiceEnabled || !localVoiceStream || !peerId || peerId === socket.id) return;
+            if (voiceReconnectTimers.has(peerId)) return;
+
+            const timer = setTimeout(async () => {
+                voiceReconnectTimers.delete(peerId);
+
+                if (!voiceEnabled || !localVoiceStream || !currentRoomId) return;
+
+                closeVoicePeer(peerId, false);
+
+                try {
+                    await callVoiceUser(peerId, nick);
+                } catch (error) {
+                    console.warn('Falha ao reconectar voz:', error);
+                }
+            }, 1400);
+
+            voiceReconnectTimers.set(peerId, timer);
+        }
+
+        function clearVoiceReconnect(peerId) {
+            const timer = voiceReconnectTimers.get(peerId);
+            if (timer) clearTimeout(timer);
+            voiceReconnectTimers.delete(peerId);
         }
 
         function createVoicePeer(peerId, nick = 'Jogador') {
@@ -3344,8 +3427,22 @@
             };
 
             pc.onconnectionstatechange = () => {
-                if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) {
-                    setTimeout(() => closeVoicePeer(peerId), 800);
+                if (pc.connectionState === 'connected') {
+                    clearVoiceReconnect(peerId);
+                }
+
+                if (['failed', 'disconnected'].includes(pc.connectionState)) {
+                    scheduleVoiceReconnect(peerId, nick);
+                }
+
+                if (pc.connectionState === 'closed') {
+                    closeVoicePeer(peerId, false);
+                }
+            };
+
+            pc.oniceconnectionstatechange = () => {
+                if (['failed', 'disconnected'].includes(pc.iceConnectionState)) {
+                    scheduleVoiceReconnect(peerId, nick);
                 }
             };
 
@@ -3371,7 +3468,7 @@
             });
         }
 
-        function closeVoicePeer(peerId) {
+        function closeVoicePeer(peerId, clearReconnectTimer = true) {
             const pc = voicePeers.get(peerId);
             if (pc) {
                 pc.close();
@@ -3386,7 +3483,22 @@
             }
 
             stopVoiceAnalyser(peerId);
+
+            if (clearReconnectTimer) {
+                clearVoiceReconnect(peerId);
+            }
         }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && voiceEnabled && currentRoomId) {
+                socket.emit('voice-join', {
+                    roomId: currentRoomId,
+                    nick: myNick
+                });
+                renderPlayerOrbs(roomMembersCache);
+            }
+        });
+
         // Evita que uma mensagem digitada vire HTML dentro do chat
         function escapeHTML(value) {
             return value
