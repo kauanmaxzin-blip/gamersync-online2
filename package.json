@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "2.5.0",
-  "description": "GamerSync com sistema de emojis no chat",
+  "version": "2.6.0",
+  "description": "GamerSync com logo personalizada no topo",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

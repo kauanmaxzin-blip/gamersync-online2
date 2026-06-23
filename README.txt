@@ -1,10 +1,9 @@
-GamerSync - Sistema de Emoji
+GamerSync - Logo no topo
 
 Mudanças:
-- botão de carinha abre painel de emojis
-- tocar no emoji coloca ele no campo de mensagem
-- painel fecha ao enviar mensagem
-- funciona no celular e no computador
+- a logo enviada foi colocada no círculo do topo do app
+- o ícone antigo do gamepad foi removido
+- a mesma logo também aparece no perfil/modal para manter identidade visual
 
 Substitua no GitHub:
 - index.html
