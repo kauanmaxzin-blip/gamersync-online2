@@ -1,20 +1,15 @@
-GamerSync - ADM sem código
+GamerSync - Sincronização de salas
 
 Mudanças:
-- removido o campo Código de ADM
-- ADM agora é automático pelo Gmail escolhido
-- quem não é ADM não vê a Área de ADM no perfil
-- quem é ADM vê o botão Abrir Painel ADM
-- ADM pode fechar salas pelo painel
+- quem entra depois agora recebe as salas que já estavam abertas
+- o servidor manda a lista de salas assim que o jogador conecta
+- o app atualiza a lista ao entrar com Google
+- o app atualiza a lista ao abrir um jogo
+- o app sincroniza as salas automaticamente a cada 4 segundos
 
-Como escolher ADM:
-Abra server.js e edite esta parte:
-
-const ADMIN_EMAILS = [
-  "kauanmaxzin@gmail.com"
-];
-
-Coloque o Gmail real de cada ADM dentro da lista.
+Observação:
+A sala aparece para quem entra depois enquanto ela ainda existir no servidor.
+Se todos saírem da sala, ela é fechada e some da lista.
 
 Substitua no GitHub:
 - index.html

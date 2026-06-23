@@ -371,6 +371,8 @@ io.on("connection", (socket) => {
 
   socket.data.isAdmin = false;
 
+  socket.emit("rooms-list", Array.from(rooms.values()).map(publicRoom));
+
   socket.on("register-google-account", async ({ idToken }) => {
     try {
       const decoded = await admin.auth().verifyIdToken(idToken);
@@ -387,6 +389,7 @@ io.on("connection", (socket) => {
       });
 
       updateAdminStatusFromAccount(socket);
+      socket.emit("rooms-list", Array.from(rooms.values()).map(publicRoom));
     } catch (error) {
       console.error("Token Firebase inválido:", error.message);
       socket.emit("google-account-error", {

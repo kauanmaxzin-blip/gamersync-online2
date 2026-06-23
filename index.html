@@ -1664,6 +1664,8 @@
         // SISTEMA REAL DE SALAS COM SERVIDOR
         // ===============================
         const socket = io();
+        let allRoomsCache = [];
+        let roomsSyncTimer = null;
         let currentGame = '';
         let currentRoomId = '';
         let currentRoomName = '';
@@ -1676,8 +1678,9 @@
 
         socket.on('connect', () => {
             updateConnectionStatus('Online no servidor');
-            socket.emit('get-rooms', {});
+            startRoomsSync();
             registerGoogleAccountOnSocket();
+                    refreshRooms();
         });
 
         socket.on('disconnect', () => {
@@ -1686,8 +1689,9 @@
         });
 
         socket.on('rooms-list', (rooms) => {
-            updateGameRoomCounts(rooms || []);
-            renderRooms(rooms || []);
+            allRoomsCache = rooms || [];
+            updateGameRoomCounts(allRoomsCache);
+            renderRooms(allRoomsCache);
         });
 
         socket.on('room-created', (room) => {
@@ -1810,8 +1814,25 @@
             return myNick;
         }
 
+
+        function startRoomsSync() {
+            if (roomsSyncTimer) {
+                clearInterval(roomsSyncTimer);
+            }
+
+            refreshRooms();
+
+            roomsSyncTimer = setInterval(() => {
+                if (socket && socket.connected) {
+                    socket.emit('get-rooms', {});
+                }
+            }, 4000);
+        }
+
         function refreshRooms() {
-            socket.emit('get-rooms', {});
+            if (socket && socket.connected) {
+                socket.emit('get-rooms', {});
+            }
         }
 
         function openCreateRoomModal(type) {
@@ -1952,11 +1973,13 @@
             });
         }
 
-        function renderRooms(rooms) {
+        function renderRooms(rooms = allRoomsCache) {
             const list = document.getElementById('rooms-list');
             if (!list) return;
 
-            const gameRooms = rooms.filter(room => room.game === currentGame);
+            const gameRooms = (rooms || []).filter(room => {
+                return String(room.game || '').trim().toLowerCase() === String(currentGame || '').trim().toLowerCase();
+            });
 
             if (gameRooms.length === 0) {
                 list.innerHTML = `
@@ -2162,6 +2185,7 @@
                     const activeScreen = document.querySelector('.screen.active');
                     if (activeScreen && activeScreen.id === 'screen-login') {
                         goToScreen('screen-home');
+                    refreshRooms();
                         showToast(`Bem-vindo, ${user.displayName || 'Jogador'}!`, 'success');
                     }
                 } else {
@@ -2627,6 +2651,7 @@
             if (playing) playing.innerText = gameName;
 
             goToScreen('screen-game-detail');
+            renderRooms(allRoomsCache);
             refreshRooms();
         }
 

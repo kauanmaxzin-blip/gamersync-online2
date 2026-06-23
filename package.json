@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "3.2.0",
-  "description": "GamerSync com ADM automático por Gmail",
+  "version": "3.3.0",
+  "description": "GamerSync com sincronização de salas para quem entra depois",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
