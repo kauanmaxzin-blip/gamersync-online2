@@ -237,6 +237,10 @@ function joinRoom(socket, { roomId, nick, password }) {
       messages: room.messages || []
     });
 
+    if (room.youtube && room.youtube.videoId) {
+      socket.emit("youtube-state", room.youtube);
+    }
+
     sendMembers(roomId);
     sendRooms();
     emitAdminRooms();
@@ -272,6 +276,10 @@ function joinRoom(socket, { roomId, nick, password }) {
     roomId,
     messages: room.messages || []
   });
+
+  if (room.youtube && room.youtube.videoId) {
+    socket.emit("youtube-state", room.youtube);
+  }
 
   socket.emit("server-message", {
     message: `Bem-vindo(a), ${cleanNick}! Você entrou em ${room.name}.`
@@ -363,6 +371,26 @@ function closeRoomByAdmin(socket, roomId) {
   });
 }
 
+
+function cleanYouTubeId(videoId) {
+  const id = String(videoId || "").trim();
+  return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : "";
+}
+
+function getYouTubeStateForRoom(room) {
+  if (!room.youtube) {
+    room.youtube = {
+      videoId: "",
+      playing: false,
+      time: 0,
+      updatedAt: Date.now(),
+      by: ""
+    };
+  }
+
+  return room.youtube;
+}
+
 function relayVoice(socket, eventName, { roomId, to, offer, answer, candidate }) {
   const room = rooms.get(roomId);
   if (!room) return;
@@ -449,6 +477,13 @@ io.on("connection", (socket) => {
       members: [],
       messages: [],
       voiceUsers: new Set(),
+      youtube: {
+        videoId: "",
+        playing: false,
+        time: 0,
+        updatedAt: Date.now(),
+        by: ""
+      },
       createdAt: Date.now()
     };
 
@@ -472,6 +507,126 @@ io.on("connection", (socket) => {
     leaveRoom(socket, roomId, nick);
   });
 
+
+
+  socket.on("youtube-get-state", ({ roomId }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    const member = getMember(room, socket.id);
+    if (!member) return;
+
+    const youtube = getYouTubeStateForRoom(room);
+    if (youtube.videoId) {
+      socket.emit("youtube-state", youtube);
+    }
+  });
+
+  socket.on("youtube-load", ({ roomId, videoId, nick }) => {
+    const room = rooms.get(roomId);
+
+    if (!room) {
+      socket.emit("youtube-error", { message: "Essa sala não existe mais." });
+      return;
+    }
+
+    const member = getMember(room, socket.id);
+    if (!member) {
+      socket.emit("youtube-error", { message: "Você não está nessa sala." });
+      return;
+    }
+
+    const cleanId = cleanYouTubeId(videoId);
+    if (!cleanId) {
+      socket.emit("youtube-error", { message: "Link ou vídeo do YouTube inválido." });
+      return;
+    }
+
+    const controller = getSocketName(socket, nick);
+
+    room.youtube = {
+      videoId: cleanId,
+      playing: true,
+      time: 0,
+      updatedAt: Date.now(),
+      by: controller,
+      message: `${controller} colocou um vídeo do YouTube na sala.`
+    };
+
+    io.to(roomId).emit("youtube-state", room.youtube);
+
+    setTimeout(() => {
+      const currentRoom = rooms.get(roomId);
+      if (currentRoom && currentRoom.youtube) {
+        delete currentRoom.youtube.message;
+      }
+    }, 800);
+  });
+
+  socket.on("youtube-control", ({ roomId, action, time, nick }) => {
+    const room = rooms.get(roomId);
+
+    if (!room) {
+      socket.emit("youtube-error", { message: "Essa sala não existe mais." });
+      return;
+    }
+
+    const member = getMember(room, socket.id);
+    if (!member) {
+      socket.emit("youtube-error", { message: "Você não está nessa sala." });
+      return;
+    }
+
+    const youtube = getYouTubeStateForRoom(room);
+    const controller = getSocketName(socket, nick);
+    const safeTime = Math.max(0, Number(time || 0));
+
+    if (action === "clear") {
+      room.youtube = {
+        videoId: "",
+        playing: false,
+        time: 0,
+        updatedAt: Date.now(),
+        by: controller
+      };
+
+      io.to(roomId).emit("youtube-state", {
+        clear: true,
+        by: controller
+      });
+
+      io.to(roomId).emit("server-message", {
+        message: `${controller} fechou o vídeo do YouTube.`
+      });
+      return;
+    }
+
+    if (!youtube.videoId) {
+      socket.emit("youtube-error", { message: "Nenhum vídeo carregado na sala." });
+      return;
+    }
+
+    if (action === "play") {
+      youtube.playing = true;
+      youtube.time = safeTime;
+      youtube.updatedAt = Date.now();
+      youtube.by = controller;
+    } else if (action === "pause") {
+      youtube.playing = false;
+      youtube.time = safeTime;
+      youtube.updatedAt = Date.now();
+      youtube.by = controller;
+    } else if (action === "sync") {
+      youtube.time = safeTime;
+      youtube.updatedAt = Date.now();
+      youtube.by = controller;
+    } else {
+      socket.emit("youtube-error", { message: "Controle do YouTube inválido." });
+      return;
+    }
+
+    io.to(roomId).emit("youtube-state", youtube);
+  });
 
   socket.on("get-room-history", ({ roomId }) => {
     const room = rooms.get(roomId);

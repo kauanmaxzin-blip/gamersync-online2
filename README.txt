@@ -1,14 +1,15 @@
-GamerSync - Salas estáveis
+GamerSync - Assistir YouTube juntos
 
-Correção:
-- removido temporariamente o espelhamento de tela
-- entrada nas salas corrigida
-- criação de salas corrigida
-- histórico continua
-- emoji continua
-- microfone continua
-- bolinhas dos players continuam
-- ADM por Gmail continua
+Novidades:
+- botão YouTube no chat
+- cole um link do YouTube e todos da sala veem o mesmo vídeo
+- controles Play, Pausar, Sincronizar e Fechar vídeo
+- quem entra depois recebe o vídeo que já está na sala
+- o vídeo fica salvo enquanto a sala existir no servidor
+
+Importante:
+- em alguns celulares, o navegador pode pedir que a pessoa toque no vídeo para liberar o play
+- use links normais do YouTube, youtu.be ou Shorts
 
 Substitua no GitHub:
 - index.html

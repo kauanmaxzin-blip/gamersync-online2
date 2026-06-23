@@ -1339,6 +1339,166 @@
             }
         }
 
+    
+        /* Sistema assistir YouTube juntos */
+        .youtube-watch-box {
+            display: none;
+            position: relative;
+            z-index: 18;
+            margin: 0.9rem 1rem 0;
+            border: 1px solid rgba(220, 38, 38, .45);
+            background: rgba(8, 8, 8, .96);
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 18px 55px rgba(0,0,0,.55);
+        }
+
+        .youtube-watch-box.active {
+            display: block;
+        }
+
+        .youtube-watch-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            padding: .8rem .9rem;
+            border-bottom: 1px solid rgba(38,38,38,.9);
+            background: linear-gradient(90deg, rgba(220,38,38,.18), rgba(10,10,10,.96));
+        }
+
+        .youtube-watch-title {
+            color: #ffffff;
+            font-weight: 900;
+            font-size: .9rem;
+            line-height: 1.15;
+        }
+
+        .youtube-watch-subtitle {
+            color: #a3a3a3;
+            font-size: .72rem;
+            margin-top: .15rem;
+        }
+
+        .youtube-watch-close {
+            min-width: 2.35rem;
+            height: 2.35rem;
+            border-radius: .75rem;
+            background: rgba(23,23,23,.95);
+            border: 1px solid rgba(64,64,64,.9);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .youtube-watch-player-wrap {
+            background: #020202;
+            aspect-ratio: 16 / 9;
+            width: 100%;
+            display: grid;
+            place-items: center;
+        }
+
+        #youtube-player {
+            width: 100%;
+            height: 100%;
+        }
+
+        .youtube-placeholder {
+            color: #a3a3a3;
+            text-align: center;
+            padding: 1rem;
+            font-size: .9rem;
+        }
+
+        .youtube-watch-controls {
+            padding: .8rem;
+            border-top: 1px solid rgba(38,38,38,.9);
+            display: grid;
+            gap: .65rem;
+            background: rgba(10,10,10,.96);
+        }
+
+        .youtube-input-row {
+            display: flex;
+            gap: .5rem;
+        }
+
+        .youtube-input {
+            flex: 1;
+            min-width: 0;
+            background: #050505;
+            border: 1px solid #3f3f46;
+            border-radius: .8rem;
+            color: #ffffff;
+            padding: .75rem .85rem;
+            outline: none;
+        }
+
+        .youtube-input:focus {
+            border-color: #dc2626;
+        }
+
+        .youtube-btn {
+            min-height: 2.7rem;
+            border-radius: .8rem;
+            padding: .65rem .85rem;
+            background: #171717;
+            border: 1px solid #3f3f46;
+            color: #ffffff;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            transition: .18s ease;
+            flex: 0 0 auto;
+        }
+
+        .youtube-btn:hover,
+        .youtube-btn:active {
+            background: #dc2626;
+            border-color: #ef4444;
+        }
+
+        .youtube-btn-primary {
+            background: #dc2626;
+            border-color: #ef4444;
+        }
+
+        .youtube-control-row {
+            display: flex;
+            gap: .5rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .youtube-active-btn {
+            background: #dc2626 !important;
+            border-color: #ef4444 !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 24px rgba(220, 38, 38, .35);
+        }
+
+        @media (max-width: 767px) {
+            .youtube-watch-box {
+                margin: .7rem .75rem 0;
+            }
+
+            .youtube-input-row {
+                flex-direction: column;
+            }
+
+            .youtube-btn {
+                width: 100%;
+            }
+
+            .youtube-control-row .youtube-btn {
+                width: auto;
+            }
+        }
+
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex flex-col">
@@ -1772,6 +1932,54 @@
                 </div>
             </div>
 
+
+            <div id="youtube-watch-box" class="youtube-watch-box">
+                <div class="youtube-watch-header">
+                    <div class="min-w-0">
+                        <p id="youtube-watch-title" class="youtube-watch-title">Assistir YouTube juntos</p>
+                        <p id="youtube-watch-subtitle" class="youtube-watch-subtitle">Cole um link e todos da sala assistem juntos.</p>
+                    </div>
+                    <button type="button" onclick="hideYouTubeWatch()" class="youtube-watch-close" title="Esconder YouTube" aria-label="Esconder YouTube">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="youtube-watch-player-wrap">
+                    <div id="youtube-player"></div>
+                    <div id="youtube-placeholder" class="youtube-placeholder">Nenhum vídeo carregado ainda.</div>
+                </div>
+
+                <div class="youtube-watch-controls">
+                    <div class="youtube-input-row">
+                        <input id="youtube-url-input" class="youtube-input" type="text" placeholder="Cole o link do YouTube aqui..." autocomplete="off">
+                        <button type="button" onclick="loadYouTubeFromInput()" class="youtube-btn youtube-btn-primary">
+                            <i data-lucide="play-circle" class="w-5 h-5"></i>
+                            Assistir
+                        </button>
+                    </div>
+
+                    <div class="youtube-control-row">
+                        <button type="button" onclick="sendYouTubeControl('play')" class="youtube-btn">
+                            <i data-lucide="play" class="w-4 h-4"></i>
+                            Play
+                        </button>
+                        <button type="button" onclick="sendYouTubeControl('pause')" class="youtube-btn">
+                            <i data-lucide="pause" class="w-4 h-4"></i>
+                            Pausar
+                        </button>
+                        <button type="button" onclick="sendYouTubeControl('sync')" class="youtube-btn">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            Sincronizar
+                        </button>
+                        <button type="button" onclick="clearYouTubeRoom()" class="youtube-btn">
+                            <i data-lucide="x-circle" class="w-4 h-4"></i>
+                            Fechar vídeo
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+
             <!-- Background Watermark -->
             <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
                 <i data-lucide="gamepad-2" class="w-64 h-64 text-white"></i>
@@ -1812,6 +2020,12 @@
                         <i data-lucide="mic" class="w-5 h-5"></i>
                         <span>Microfone</span>
                     </button>
+
+                    <button type="button" onclick="toggleYouTubeWatch()" id="youtube-watch-btn" class="chat-action-btn" title="Assistir YouTube junto">
+                        <i data-lucide="youtube" class="w-5 h-5"></i>
+                        <span>YouTube</span>
+                    </button>
+
                     <button type="button" class="chat-action-btn" title="Fone de ouvido">
                         <i data-lucide="headphones" class="w-5 h-5"></i>
                         <span>Fone</span>
@@ -1956,6 +2170,13 @@
         let selectedRoomName = '';
         let myNick = localStorage.getItem('gamersync_nick') || 'Jogador' + Math.floor(Math.random() * 9999);
 
+        let youtubePlayer = null;
+        let youtubeApiReady = false;
+        let youtubePlayerReady = false;
+        let youtubeCurrentVideoId = '';
+        let youtubeApplyingRemote = false;
+        let youtubeLastEmit = 0;
+
         socket.on('connect', () => {
             updateConnectionStatus('Online no servidor');
             startRoomsSync();
@@ -2002,13 +2223,25 @@
             goToScreen('screen-group');
             addSystemMessage(`Você entrou em ${room.name}.`);
             socket.emit('get-room-history', { roomId: currentRoomId });
+            socket.emit('youtube-get-state', { roomId: currentRoomId });
             setTimeout(() => socket.emit('get-room-history', { roomId: currentRoomId }), 500);
+            setTimeout(() => socket.emit('youtube-get-state', { roomId: currentRoomId }), 700);
             closeRoomModal();
         });
 
         socket.on('server-message', (data) => {
             addSystemMessage(data.message);
         });
+
+
+        socket.on('youtube-state', (state) => {
+            applyYouTubeState(state || {});
+        });
+
+        socket.on('youtube-error', (data) => {
+            showToast(data.message || 'Erro no YouTube da sala.', 'error');
+        });
+
 
         socket.on('room-members', (members) => {
             renderMembers(members || []);
@@ -2784,6 +3017,7 @@
                 currentRoomId = '';
                 currentRoomName = '';
                 stopVoiceChat(false);
+                resetYouTubeWatch(false);
                 showToast('A sala foi fechada por um ADM.', 'info');
                 goToScreen('screen-game-detail');
                 refreshRooms();
@@ -3066,6 +3300,7 @@
                     socket.emit('leave-room', { roomId: currentRoomId, nick: myNick });
                     currentRoomId = '';
                     currentRoomName = '';
+                    resetYouTubeWatch(false);
                 }
                 goToScreen('screen-game-detail');
                 refreshRooms();
@@ -3076,6 +3311,317 @@
         // Sistema de adicionar amigos
         function addFriend(name) {
             showToast(`Pedido de amizade enviado para ${name}!`, 'success');
+        }
+
+
+
+        // ===============================
+        // SISTEMA ASSISTIR YOUTUBE JUNTOS
+        // ===============================
+        function ensureYouTubeApi() {
+            if (youtubeApiReady || window.YT?.Player) {
+                youtubeApiReady = true;
+                return Promise.resolve();
+            }
+
+            return new Promise((resolve) => {
+                const oldReady = window.onYouTubeIframeAPIReady;
+
+                window.onYouTubeIframeAPIReady = () => {
+                    youtubeApiReady = true;
+                    if (typeof oldReady === 'function') oldReady();
+                    resolve();
+                };
+
+                if (!document.getElementById('youtube-iframe-api-script')) {
+                    const tag = document.createElement('script');
+                    tag.id = 'youtube-iframe-api-script';
+                    tag.src = 'https://www.youtube.com/iframe_api';
+                    document.head.appendChild(tag);
+                }
+            });
+        }
+
+        function extractYouTubeVideoId(value) {
+            const text = String(value || '').trim();
+
+            if (/^[a-zA-Z0-9_-]{11}$/.test(text)) return text;
+
+            const patterns = [
+                /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+                /youtube\.com\/watch\?[^#]*v=([a-zA-Z0-9_-]{11})/,
+                /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+                /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+            ];
+
+            for (const pattern of patterns) {
+                const match = text.match(pattern);
+                if (match) return match[1];
+            }
+
+            try {
+                const url = new URL(text);
+                const videoId = url.searchParams.get('v');
+                if (videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId)) return videoId;
+            } catch (error) {}
+
+            return '';
+        }
+
+        function toggleYouTubeWatch() {
+            const box = document.getElementById('youtube-watch-box');
+            if (!box) return;
+
+            box.classList.toggle('active');
+
+            if (box.classList.contains('active') && currentRoomId) {
+                socket.emit('youtube-get-state', { roomId: currentRoomId });
+            }
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function showYouTubeWatch() {
+            const box = document.getElementById('youtube-watch-box');
+            const btn = document.getElementById('youtube-watch-btn');
+
+            if (box) box.classList.add('active');
+            if (btn) btn.classList.add('youtube-active-btn');
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function hideYouTubeWatch() {
+            const box = document.getElementById('youtube-watch-box');
+            const btn = document.getElementById('youtube-watch-btn');
+
+            if (box) box.classList.remove('active');
+            if (btn && !youtubeCurrentVideoId) btn.classList.remove('youtube-active-btn');
+        }
+
+        function setYouTubeHeader(title, subtitle) {
+            const titleEl = document.getElementById('youtube-watch-title');
+            const subtitleEl = document.getElementById('youtube-watch-subtitle');
+
+            if (titleEl) titleEl.innerText = title;
+            if (subtitleEl) subtitleEl.innerText = subtitle;
+        }
+
+        function setYouTubePlaceholder(visible, text = 'Nenhum vídeo carregado ainda.') {
+            const placeholder = document.getElementById('youtube-placeholder');
+            if (!placeholder) return;
+
+            placeholder.style.display = visible ? 'block' : 'none';
+            placeholder.innerText = text;
+        }
+
+        async function createYouTubePlayer(videoId = '') {
+            await ensureYouTubeApi();
+
+            if (youtubePlayer) return youtubePlayer;
+
+            youtubePlayer = new YT.Player('youtube-player', {
+                height: '100%',
+                width: '100%',
+                videoId,
+                playerVars: {
+                    playsinline: 1,
+                    rel: 0,
+                    modestbranding: 1
+                },
+                events: {
+                    onReady: () => {
+                        youtubePlayerReady = true;
+                        setYouTubePlaceholder(!youtubeCurrentVideoId);
+                    },
+                    onStateChange: handleYouTubePlayerStateChange
+                }
+            });
+
+            return youtubePlayer;
+        }
+
+        function getYouTubeTime() {
+            try {
+                if (youtubePlayer && typeof youtubePlayer.getCurrentTime === 'function') {
+                    return Number(youtubePlayer.getCurrentTime() || 0);
+                }
+            } catch (error) {}
+            return 0;
+        }
+
+        function handleYouTubePlayerStateChange(event) {
+            if (youtubeApplyingRemote || !currentRoomId || !youtubeCurrentVideoId) return;
+
+            const YTState = window.YT?.PlayerState || {};
+            const now = Date.now();
+
+            if (now - youtubeLastEmit < 800) return;
+
+            if (event.data === YTState.PLAYING) {
+                youtubeLastEmit = now;
+                socket.emit('youtube-control', {
+                    roomId: currentRoomId,
+                    action: 'play',
+                    time: getYouTubeTime(),
+                    nick: myNick
+                });
+            }
+
+            if (event.data === YTState.PAUSED) {
+                youtubeLastEmit = now;
+                socket.emit('youtube-control', {
+                    roomId: currentRoomId,
+                    action: 'pause',
+                    time: getYouTubeTime(),
+                    nick: myNick
+                });
+            }
+        }
+
+        async function loadYouTubeFromInput() {
+            if (!currentRoomId) {
+                showToast('Entre em uma sala primeiro.', 'error');
+                return;
+            }
+
+            const input = document.getElementById('youtube-url-input');
+            const videoId = extractYouTubeVideoId(input ? input.value : '');
+
+            if (!videoId) {
+                showToast('Cole um link válido do YouTube.', 'error');
+                return;
+            }
+
+            socket.emit('youtube-load', {
+                roomId: currentRoomId,
+                videoId,
+                nick: myNick
+            });
+        }
+
+        function sendYouTubeControl(action) {
+            if (!currentRoomId) {
+                showToast('Entre em uma sala primeiro.', 'error');
+                return;
+            }
+
+            if (!youtubeCurrentVideoId && action !== 'sync') {
+                showToast('Carregue um vídeo primeiro.', 'info');
+                return;
+            }
+
+            socket.emit('youtube-control', {
+                roomId: currentRoomId,
+                action,
+                time: getYouTubeTime(),
+                nick: myNick
+            });
+        }
+
+        function clearYouTubeRoom() {
+            if (!currentRoomId) return;
+
+            socket.emit('youtube-control', {
+                roomId: currentRoomId,
+                action: 'clear',
+                time: 0,
+                nick: myNick
+            });
+        }
+
+        async function applyYouTubeState(state) {
+            if (!state || !state.videoId) {
+                if (state && state.clear) resetYouTubeWatch(true);
+                return;
+            }
+
+            showYouTubeWatch();
+            setYouTubePlaceholder(false);
+
+            youtubeCurrentVideoId = state.videoId;
+            const byText = state.by ? `Controlado por ${state.by}` : 'Sincronizado com a sala';
+            setYouTubeHeader('Assistindo YouTube juntos', byText);
+
+            const player = await createYouTubePlayer(state.videoId);
+
+            const now = Date.now();
+            const serverUpdatedAt = Number(state.updatedAt || now);
+            const baseTime = Number(state.time || 0);
+            const correctedTime = state.playing ? baseTime + Math.max(0, (now - serverUpdatedAt) / 1000) : baseTime;
+
+            youtubeApplyingRemote = true;
+
+            try {
+                const currentVideoData = player.getVideoData ? player.getVideoData() : {};
+                const currentId = currentVideoData && currentVideoData.video_id;
+
+                if (currentId !== state.videoId) {
+                    if (state.playing) {
+                        player.loadVideoById({
+                            videoId: state.videoId,
+                            startSeconds: correctedTime
+                        });
+                    } else {
+                        player.cueVideoById({
+                            videoId: state.videoId,
+                            startSeconds: correctedTime
+                        });
+                    }
+                } else {
+                    const localTime = getYouTubeTime();
+                    if (Math.abs(localTime - correctedTime) > 2) {
+                        player.seekTo(correctedTime, true);
+                    }
+
+                    if (state.playing) {
+                        player.playVideo();
+                    } else {
+                        player.pauseVideo();
+                    }
+                }
+
+                if (!state.playing) {
+                    setTimeout(() => {
+                        try {
+                            player.pauseVideo();
+                            player.seekTo(correctedTime, true);
+                        } catch (error) {}
+                    }, 300);
+                }
+            } catch (error) {
+                console.warn('Erro ao aplicar estado do YouTube:', error);
+            }
+
+            setTimeout(() => {
+                youtubeApplyingRemote = false;
+            }, 900);
+
+            if (state.message) {
+                addSystemMessage(state.message);
+            }
+        }
+
+        function resetYouTubeWatch(showBox = false) {
+            youtubeCurrentVideoId = '';
+            youtubeApplyingRemote = false;
+
+            try {
+                if (youtubePlayer && typeof youtubePlayer.stopVideo === 'function') {
+                    youtubePlayer.stopVideo();
+                }
+            } catch (error) {}
+
+            setYouTubePlaceholder(true);
+            setYouTubeHeader('Assistir YouTube juntos', 'Cole um link e todos da sala assistem juntos.');
+
+            const btn = document.getElementById('youtube-watch-btn');
+            if (btn) btn.classList.remove('youtube-active-btn');
+
+            if (!showBox) {
+                const box = document.getElementById('youtube-watch-box');
+                if (box) box.classList.remove('active');
+            }
         }
 
 
@@ -3496,6 +4042,14 @@
                     nick: myNick
                 });
                 renderPlayerOrbs(roomMembersCache);
+            }
+        });
+
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && event.target && event.target.id === 'youtube-url-input') {
+                event.preventDefault();
+                loadYouTubeFromInput();
             }
         });
 

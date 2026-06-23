@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "3.8.2",
-  "description": "GamerSync com salas estáveis",
+  "version": "3.9.0",
+  "description": "GamerSync com YouTube junto na sala",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
