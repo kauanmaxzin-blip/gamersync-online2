@@ -1499,6 +1499,135 @@
             }
         }
 
+    
+        /* Correção mobile do YouTube juntos */
+        .youtube-watch-box {
+            flex-shrink: 0 !important;
+            max-height: 52vh !important;
+            display: none;
+        }
+
+        .youtube-watch-box.active {
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        .youtube-watch-header {
+            flex-shrink: 0 !important;
+            padding: .65rem .75rem !important;
+        }
+
+        .youtube-watch-player-wrap {
+            flex-shrink: 0 !important;
+            min-height: 8.5rem !important;
+            max-height: 26vh !important;
+            aspect-ratio: 16 / 9 !important;
+        }
+
+        #youtube-player {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .youtube-watch-controls {
+            flex-shrink: 0 !important;
+            padding: .65rem !important;
+            gap: .5rem !important;
+        }
+
+        .youtube-input-row {
+            display: grid !important;
+            grid-template-columns: 1fr auto !important;
+            gap: .5rem !important;
+            align-items: center !important;
+        }
+
+        .youtube-input {
+            min-height: 2.8rem !important;
+            font-size: 1rem !important;
+        }
+
+        .youtube-input-row .youtube-btn {
+            width: auto !important;
+            min-width: 6.3rem !important;
+            min-height: 2.8rem !important;
+            white-space: nowrap !important;
+        }
+
+        .youtube-control-row {
+            display: flex !important;
+            gap: .45rem !important;
+            overflow-x: auto !important;
+            padding-bottom: .15rem !important;
+        }
+
+        .youtube-control-row .youtube-btn {
+            width: auto !important;
+            min-width: max-content !important;
+            min-height: 2.45rem !important;
+            padding: .55rem .7rem !important;
+            font-size: .85rem !important;
+        }
+
+        @media (max-width: 767px) {
+            .youtube-watch-box {
+                margin: .55rem .75rem 0 !important;
+                max-height: 46vh !important;
+            }
+
+            .youtube-watch-title {
+                font-size: .82rem !important;
+            }
+
+            .youtube-watch-subtitle {
+                font-size: .68rem !important;
+            }
+
+            .youtube-watch-player-wrap {
+                min-height: 7.2rem !important;
+                max-height: 18vh !important;
+            }
+
+            .youtube-placeholder {
+                font-size: .8rem !important;
+                padding: .7rem !important;
+            }
+
+            .youtube-watch-controls {
+                padding: .55rem !important;
+            }
+
+            .youtube-input-row {
+                grid-template-columns: 1fr 5.7rem !important;
+            }
+
+            .youtube-input {
+                padding: .65rem .7rem !important;
+                font-size: .92rem !important;
+            }
+
+            .youtube-input-row .youtube-btn {
+                min-width: 5.7rem !important;
+                padding: .55rem .5rem !important;
+                font-size: .86rem !important;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .youtube-input-row {
+                grid-template-columns: 1fr 5.1rem !important;
+            }
+
+            .youtube-input-row .youtube-btn {
+                min-width: 5.1rem !important;
+                font-size: .8rem !important;
+            }
+
+            .youtube-input-row .youtube-btn i {
+                display: none !important;
+            }
+        }
+
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex flex-col">
@@ -1946,13 +2075,13 @@
 
                 <div class="youtube-watch-player-wrap">
                     <div id="youtube-player"></div>
-                    <div id="youtube-placeholder" class="youtube-placeholder">Nenhum vídeo carregado ainda.</div>
+                    <div id="youtube-placeholder" class="youtube-placeholder">Cole o link e toque em Assistir.</div>
                 </div>
 
                 <div class="youtube-watch-controls">
                     <div class="youtube-input-row">
                         <input id="youtube-url-input" class="youtube-input" type="text" placeholder="Cole o link do YouTube aqui..." autocomplete="off">
-                        <button type="button" onclick="loadYouTubeFromInput()" class="youtube-btn youtube-btn-primary">
+                        <button type="button" onclick="loadYouTubeFromInput()" class="youtube-btn youtube-btn-primary" id="youtube-load-btn">
                             <i data-lucide="play-circle" class="w-5 h-5"></i>
                             Assistir
                         </button>
@@ -3219,6 +3348,14 @@
             }
         });
 
+
+        document.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter' && event.target && event.target.id === 'youtube-url-input') {
+                event.preventDefault();
+                loadYouTubeFromInput();
+            }
+        });
+
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 closeFriendsPanel();
@@ -3324,7 +3461,7 @@
                 return Promise.resolve();
             }
 
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
                 const oldReady = window.onYouTubeIframeAPIReady;
 
                 window.onYouTubeIframeAPIReady = () => {
@@ -3337,35 +3474,48 @@
                     const tag = document.createElement('script');
                     tag.id = 'youtube-iframe-api-script';
                     tag.src = 'https://www.youtube.com/iframe_api';
+                    tag.onerror = () => reject(new Error('YouTube API não carregou'));
                     document.head.appendChild(tag);
                 }
+
+                setTimeout(() => {
+                    if (window.YT?.Player) {
+                        youtubeApiReady = true;
+                        resolve();
+                    }
+                }, 1800);
             });
         }
 
         function extractYouTubeVideoId(value) {
             const text = String(value || '').trim();
 
+            if (!text) return '';
+
             if (/^[a-zA-Z0-9_-]{11}$/.test(text)) return text;
 
-            const patterns = [
-                /youtu\.be\/([a-zA-Z0-9_-]{11})/,
-                /youtube\.com\/watch\?[^#]*v=([a-zA-Z0-9_-]{11})/,
-                /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
-                /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
-            ];
-
-            for (const pattern of patterns) {
-                const match = text.match(pattern);
-                if (match) return match[1];
-            }
-
             try {
-                const url = new URL(text);
-                const videoId = url.searchParams.get('v');
-                if (videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId)) return videoId;
+                const url = new URL(text.includes('://') ? text : `https://${text}`);
+
+                if (url.hostname.includes('youtu.be')) {
+                    const id = url.pathname.replace('/', '').split('/')[0];
+                    if (/^[a-zA-Z0-9_-]{11}$/.test(id)) return id;
+                }
+
+                if (url.hostname.includes('youtube.com')) {
+                    const byV = url.searchParams.get('v');
+                    if (byV && /^[a-zA-Z0-9_-]{11}$/.test(byV)) return byV;
+
+                    const parts = url.pathname.split('/').filter(Boolean);
+                    const keyIndex = parts.findIndex((part) => ['embed', 'shorts', 'live'].includes(part));
+                    if (keyIndex >= 0 && parts[keyIndex + 1] && /^[a-zA-Z0-9_-]{11}$/.test(parts[keyIndex + 1])) {
+                        return parts[keyIndex + 1];
+                    }
+                }
             } catch (error) {}
 
-            return '';
+            const match = text.match(/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([a-zA-Z0-9_-]{11})/);
+            return match ? match[1] : '';
         }
 
         function toggleYouTubeWatch() {
@@ -3407,7 +3557,7 @@
             if (subtitleEl) subtitleEl.innerText = subtitle;
         }
 
-        function setYouTubePlaceholder(visible, text = 'Nenhum vídeo carregado ainda.') {
+        function setYouTubePlaceholder(visible, text = 'Cole o link e toque em Assistir.') {
             const placeholder = document.getElementById('youtube-placeholder');
             if (!placeholder) return;
 
@@ -3486,18 +3636,25 @@
             }
 
             const input = document.getElementById('youtube-url-input');
-            const videoId = extractYouTubeVideoId(input ? input.value : '');
+            const rawValue = input ? input.value : '';
+            const videoId = extractYouTubeVideoId(rawValue);
 
             if (!videoId) {
                 showToast('Cole um link válido do YouTube.', 'error');
                 return;
             }
 
+            showYouTubeWatch();
+            setYouTubePlaceholder(true, 'Carregando vídeo...');
+            setYouTubeHeader('Assistindo YouTube juntos', 'Enviando vídeo para a sala...');
+
             socket.emit('youtube-load', {
                 roomId: currentRoomId,
                 videoId,
                 nick: myNick
             });
+
+            if (input) input.blur();
         }
 
         function sendYouTubeControl(action) {
@@ -3543,7 +3700,15 @@
             const byText = state.by ? `Controlado por ${state.by}` : 'Sincronizado com a sala';
             setYouTubeHeader('Assistindo YouTube juntos', byText);
 
-            const player = await createYouTubePlayer(state.videoId);
+            let player;
+            try {
+                player = await createYouTubePlayer(state.videoId);
+            } catch (error) {
+                console.error(error);
+                setYouTubePlaceholder(true, 'Não foi possível carregar o player do YouTube.');
+                showToast('O player do YouTube não carregou. Tente recarregar a página.', 'error');
+                return;
+            }
 
             const now = Date.now();
             const serverUpdatedAt = Number(state.updatedAt || now);

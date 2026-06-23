@@ -1,15 +1,12 @@
-GamerSync - Assistir YouTube juntos
+GamerSync - YouTube corrigido no celular
 
-Novidades:
-- botão YouTube no chat
-- cole um link do YouTube e todos da sala veem o mesmo vídeo
-- controles Play, Pausar, Sincronizar e Fechar vídeo
-- quem entra depois recebe o vídeo que já está na sala
-- o vídeo fica salvo enquanto a sala existir no servidor
-
-Importante:
-- em alguns celulares, o navegador pode pedir que a pessoa toque no vídeo para liberar o play
-- use links normais do YouTube, youtu.be ou Shorts
+Correções:
+- painel do YouTube ficou compacto no celular
+- botão Assistir aparece ao lado do campo
+- teclado Enter/Go também carrega o vídeo
+- aceita link normal, youtu.be, shorts e live
+- mostra aviso carregando vídeo
+- player avisa se não conseguir carregar
 
 Substitua no GitHub:
 - index.html
