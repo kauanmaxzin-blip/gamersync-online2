@@ -224,6 +224,11 @@ function joinRoom(socket, { roomId, nick, password }) {
 
   if (alreadyInThisRoom) {
     socket.emit("joined-room", publicRoom(room));
+  socket.emit("room-history", {
+    roomId,
+    messages: room.messages || []
+  });
+
     sendMembers(roomId);
     sendRooms();
     emitAdminRooms();
@@ -429,6 +434,7 @@ io.on("connection", (socket) => {
       password: cleanPassword,
       maxPlayers: 5,
       members: [],
+      messages: [],
       voiceUsers: new Set(),
       createdAt: Date.now()
     };
@@ -451,6 +457,34 @@ io.on("connection", (socket) => {
 
   socket.on("leave-room", ({ roomId, nick }) => {
     leaveRoom(socket, roomId, nick);
+  });
+
+
+  socket.on("get-room-history", ({ roomId }) => {
+    const room = rooms.get(roomId);
+
+    if (!room) {
+      socket.emit("room-history", {
+        roomId,
+        messages: []
+      });
+      return;
+    }
+
+    const isMember = room.members.some((member) => member.id === socket.id);
+
+    if (!isMember) {
+      socket.emit("room-history", {
+        roomId,
+        messages: []
+      });
+      return;
+    }
+
+    socket.emit("room-history", {
+      roomId,
+      messages: room.messages || []
+    });
   });
 
   socket.on("chat-message", ({ roomId, nick, text }) => {
@@ -476,13 +510,24 @@ io.on("connection", (socket) => {
       minute: "2-digit"
     });
 
-    io.to(roomId).emit("chat-message", {
+    const message = {
       roomId,
       senderId: socket.id,
       nick: getSocketName(socket, nick),
       text: cleanText,
-      time
-    });
+      time,
+      createdAt: Date.now()
+    };
+
+    if (!room.messages) room.messages = [];
+    room.messages.push(message);
+
+    // Guarda as últimas 100 mensagens para quem entrar depois.
+    if (room.messages.length > 100) {
+      room.messages = room.messages.slice(-100);
+    }
+
+    io.to(roomId).emit("chat-message", message);
   });
 
   socket.on("admin-login", () => {

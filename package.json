@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "3.3.0",
-  "description": "GamerSync com sincronização de salas para quem entra depois",
+  "version": "3.4.0",
+  "description": "GamerSync com histórico de mensagens e emoji corrigido",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

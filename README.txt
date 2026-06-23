@@ -1,15 +1,15 @@
-GamerSync - Sincronização de salas
+GamerSync - Histórico e Emoji
 
 Mudanças:
-- quem entra depois agora recebe as salas que já estavam abertas
-- o servidor manda a lista de salas assim que o jogador conecta
-- o app atualiza a lista ao entrar com Google
-- o app atualiza a lista ao abrir um jogo
-- o app sincroniza as salas automaticamente a cada 4 segundos
+- cada sala guarda as últimas 100 mensagens
+- quem entra depois na sala recebe o histórico recente
+- histórico aparece mesmo se a pessoa entrou alguns segundos depois
+- botão de emoji corrigido
+- emojis enviados aparecem no chat
 
 Observação:
-A sala aparece para quem entra depois enquanto ela ainda existir no servidor.
-Se todos saírem da sala, ela é fechada e some da lista.
+O histórico fica salvo enquanto a sala existir no servidor.
+Se todos saírem e a sala fechar, o histórico dessa sala também some.
 
 Substitua no GitHub:
 - index.html
