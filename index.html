@@ -2268,6 +2268,190 @@
             }
         }
 
+    
+        /* Correção forte do topo: perfil, sino e convite sem corte */
+        .top-invite-banner {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            transform: translate(-50%, -150%) !important;
+        }
+
+        .top-invite-banner.active {
+            opacity: 1 !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            transform: translate(-50%, 0) !important;
+        }
+
+        #screen-home header {
+            overflow: visible !important;
+        }
+
+        #screen-home header > div:first-child {
+            min-width: 0 !important;
+            flex: 1 1 auto !important;
+        }
+
+        #screen-home header > div:last-child {
+            min-width: 0 !important;
+            flex: 0 1 auto !important;
+            gap: .45rem !important;
+        }
+
+        #screen-home header h1 {
+            min-width: 0 !important;
+        }
+
+        #notification-bell-btn {
+            width: 2.75rem !important;
+            height: 2.75rem !important;
+            min-width: 2.75rem !important;
+            border-radius: .9rem !important;
+            background: rgba(23,23,23,.75) !important;
+            border: 1px solid rgba(64,64,64,.75) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        #header-events-btn {
+            height: 2.75rem !important;
+            min-width: 2.75rem !important;
+            padding: 0 .75rem !important;
+            white-space: nowrap !important;
+        }
+
+        #home-coin-pill {
+            height: 2.75rem !important;
+            min-width: 2.75rem !important;
+            max-width: 8.5rem !important;
+            padding: .35rem .55rem !important;
+        }
+
+        @media (max-width: 767px) {
+            body {
+                padding-top: 0 !important;
+            }
+
+            #screen-home header {
+                padding: calc(env(safe-area-inset-top) + .75rem) .8rem .75rem !important;
+                min-height: auto !important;
+                display: grid !important;
+                grid-template-columns: 1fr auto !important;
+                gap: .55rem !important;
+                align-items: center !important;
+            }
+
+            #screen-home header > div:first-child {
+                min-width: 0 !important;
+                gap: .5rem !important;
+            }
+
+            #screen-home header > div:first-child img {
+                width: 2.75rem !important;
+                height: 2.75rem !important;
+                min-width: 2.75rem !important;
+            }
+
+            #screen-home header h1 {
+                font-size: 1.45rem !important;
+                line-height: 1.05 !important;
+                max-width: 9.6rem !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                white-space: nowrap !important;
+            }
+
+            #screen-home header > div:last-child {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: flex-end !important;
+                gap: .35rem !important;
+                min-width: 0 !important;
+                max-width: 100% !important;
+            }
+
+            #notification-bell-btn {
+                width: 2.55rem !important;
+                height: 2.55rem !important;
+                min-width: 2.55rem !important;
+            }
+
+            #header-events-btn {
+                width: 2.55rem !important;
+                height: 2.55rem !important;
+                min-width: 2.55rem !important;
+                padding: 0 !important;
+                border-radius: .9rem !important;
+            }
+
+            #header-events-btn span,
+            #header-events-btn .coin-name {
+                display: none !important;
+            }
+
+            #home-coin-pill {
+                width: 2.55rem !important;
+                height: 2.55rem !important;
+                min-width: 2.55rem !important;
+                max-width: 2.55rem !important;
+                padding: 0 !important;
+                justify-content: center !important;
+            }
+
+            #home-coin-pill #coin-balance-header,
+            #home-coin-pill .coin-name {
+                display: none !important;
+            }
+
+            .gs-coin-icon {
+                width: 1.45rem !important;
+                height: 1.45rem !important;
+                font-size: .55rem !important;
+            }
+
+            #screen-home main {
+                padding-top: .65rem !important;
+            }
+
+            .events-home-card {
+                margin-top: .35rem !important;
+            }
+
+            .notification-panel {
+                top: calc(env(safe-area-inset-top) + 4.35rem) !important;
+                left: .65rem !important;
+                right: .65rem !important;
+                width: auto !important;
+            }
+        }
+
+        @media (max-width: 390px) {
+            #screen-home header h1 {
+                max-width: 7.6rem !important;
+                font-size: 1.25rem !important;
+            }
+
+            #screen-home header > div:last-child {
+                gap: .25rem !important;
+            }
+
+            #notification-bell-btn,
+            #header-events-btn,
+            #home-coin-pill {
+                width: 2.35rem !important;
+                height: 2.35rem !important;
+                min-width: 2.35rem !important;
+            }
+
+            #notification-bell-btn i,
+            #header-events-btn i {
+                width: 1.15rem !important;
+                height: 1.15rem !important;
+            }
+        }
+
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex flex-col">
@@ -2479,9 +2663,9 @@
                     <span id="notification-count" class="notification-count">0</span>
                 </button>
 
-                <button onclick="openEventsScreen()" id="header-events-btn" class="events-action-btn events-secondary-btn hidden md:inline-flex" title="Eventos">
+                <button onclick="openEventsScreen()" id="header-events-btn" class="events-action-btn events-secondary-btn" title="Eventos" aria-label="Eventos">
                     <i data-lucide="calendar-days" class="w-5 h-5"></i>
-                    Eventos
+                    <span>Eventos</span>
                 </button>
                 <button onclick="openEventsScreen()" id="home-coin-pill" class="coin-pill" title="Game Sneaker">
                     <span class="gs-coin-icon">GS</span>
@@ -4518,6 +4702,19 @@
         }
 
 
+
+
+        function hardHideEmptyInviteBanner() {
+            const banner = document.getElementById('top-invite-banner');
+            if (!banner) return;
+            if (!banner.classList.contains('active')) {
+                banner.style.opacity = '0';
+                banner.style.visibility = 'hidden';
+                banner.style.pointerEvents = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', hardHideEmptyInviteBanner);
 
         // ===============================
         // SISTEMA DE SINO, CONVITES E AMIZADE

@@ -1,16 +1,14 @@
-GamerSync - Convites automáticos e sino funcional
+GamerSync - Topo corrigido
 
-Novidades:
-- botão Procurar dentro da sala
-- dono da sala pode procurar jogadores aleatórios automaticamente
-- envia convite para até 5 jogadores online
-- convite aparece em cima da tela
-- jogador pode responder Sim, Não ou Não mandar por 8 minutos
-- se aceitar, entra direto na sala
-- convites funcionam mesmo em sala privada
-- sino agora abre notificações
-- sino mostra convites de sala e pedidos de amizade
-- pedidos de amizade agora aparecem para o outro jogador aceitar ou recusar
+Correções:
+- removido o quadrado vermelho cortado no topo
+- aviso de convite só aparece quando tiver convite real
+- cabeçalho mobile reorganizado
+- perfil/logo volta a aparecer sem sumir
+- sino fica clicável e quadrado
+- botão Eventos fica compacto no celular
+- moeda GS fica compacta no celular
+- topo não fica cortado
 
 Substitua no GitHub:
 - index.html
