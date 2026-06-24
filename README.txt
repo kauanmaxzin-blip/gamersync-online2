@@ -1,18 +1,16 @@
-GamerSync - Eventos e Game Sneaker
+GamerSync - Repositório de Game Sneaker
 
-Novidades:
-- nova aba Eventos
-- moeda Game Sneaker
-- saldo aparece no topo, na aba Eventos e no perfil
-- ADM pode abrir evento
-- ADM pode encerrar evento
-- eventos podem ser de Minecraft, Free Fire/FF, Roblox, Valorant, Fortnite, GTA e outros
-- jogadores participam e ganham Game Sneaker
-- o servidor valida que só ADM cria/encerra evento
-
-Observação:
-As moedas e eventos ficam salvos enquanto o servidor estiver ligado.
-Se o Render reiniciar ou dormir e limpar a memória, pode resetar.
+Mudanças:
+- símbolo da moeda agora é GS com efeito vermelho
+- efeito vermelho ao redor da moeda
+- barra/card de eventos só aparece se tiver evento aberto ou se for ADM
+- painel de criar evento só aparece para ADM
+- repositório de moedas só aparece para ADM
+- ADM pode enviar Game Sneaker por nome do jogador ou e-mail
+- jogador normal não ganha moeda automaticamente ao entrar no evento
+- jogador normal apenas entra no evento
+- ADM entrega a recompensa manualmente para quem ganhar
+- ADM escolhe o jogo do evento: Minecraft, FF, Roblox, Valorant etc.
 
 Substitua no GitHub:
 - index.html

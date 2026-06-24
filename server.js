@@ -89,6 +89,7 @@ app.get("/config", (req, res) => {
 const rooms = new Map();
 const wallets = new Map();
 const appEvents = new Map();
+const knownUsers = new Map();
 
 
 function getUserKey(socket) {
@@ -99,12 +100,7 @@ function getUserKey(socket) {
 
 function getWallet(socket) {
   const key = getUserKey(socket);
-  if (!wallets.has(key)) {
-    wallets.set(key, {
-      gameSneaker: 0
-    });
-  }
-  return wallets.get(key);
+  return getWalletByKey(key);
 }
 
 function emitWallet(socket) {
@@ -144,6 +140,78 @@ function broadcastEvents() {
 
 function requireAdmin(socket) {
   return !!(socket.data && socket.data.isAdmin);
+}
+
+
+
+function normalizeLookup(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function rememberUser(socket, nick = "") {
+  const key = getUserKey(socket);
+  const account = socket.data?.account || {};
+  const displayName = String(account.name || nick || "Jogador").trim();
+  const email = String(account.email || "").trim().toLowerCase();
+
+  if (!key) return;
+
+  knownUsers.set(key, {
+    key,
+    name: displayName,
+    nick: displayName,
+    email,
+    uid: String(account.uid || "")
+  });
+
+  if (email) knownUsers.set(email, knownUsers.get(key));
+  if (displayName) knownUsers.set(normalizeLookup(displayName), knownUsers.get(key));
+}
+
+function findKnownUser(target) {
+  const lookup = normalizeLookup(target);
+  if (!lookup) return null;
+
+  if (knownUsers.has(lookup)) return knownUsers.get(lookup);
+
+  for (const user of knownUsers.values()) {
+    if (normalizeLookup(user.email) === lookup) return user;
+    if (normalizeLookup(user.name) === lookup) return user;
+    if (normalizeLookup(user.nick) === lookup) return user;
+  }
+
+  // Se o ADM colocou um e-mail que ainda não entrou online, cria carteira por e-mail.
+  if (lookup.includes("@")) {
+    return {
+      key: lookup,
+      name: lookup.split("@")[0],
+      nick: lookup.split("@")[0],
+      email: lookup
+    };
+  }
+
+  return null;
+}
+
+function getWalletByKey(key) {
+  const safeKey = String(key || "").toLowerCase();
+  if (!wallets.has(safeKey)) {
+    wallets.set(safeKey, {
+      gameSneaker: 0
+    });
+  }
+  return wallets.get(safeKey);
+}
+
+function emitWalletByKey(userKey) {
+  const normalizedKey = String(userKey || "").toLowerCase();
+
+  for (const socket of io.sockets.sockets.values()) {
+    const key = getUserKey(socket);
+    if (String(key || "").toLowerCase() === normalizedKey) {
+      socket.emit("wallet-update", getWalletByKey(normalizedKey));
+    }
+  }
 }
 
 
@@ -286,6 +354,7 @@ function joinRoom(socket, { roomId, nick, password }) {
   }
 
   const cleanNick = getSocketName(socket, nick);
+  rememberUser(socket, cleanNick);
   const alreadyInThisRoom = room.members.some((member) => member.id === socket.id);
 
   if (alreadyInThisRoom) {
@@ -517,6 +586,43 @@ io.on("connection", (socket) => {
     emitEventsTo(socket);
   });
 
+
+  socket.on("admin-give-coins", ({ target, amount, reason }) => {
+    if (!requireAdmin(socket)) {
+      socket.emit("event-action-result", {
+        ok: false,
+        message: "Só ADM pode usar o repositório de moedas."
+      });
+      return;
+    }
+
+    const user = findKnownUser(target);
+    const safeAmount = Math.max(1, Math.min(100000, Number(amount || 0)));
+    const cleanReason = String(reason || "recompensa de evento").trim().slice(0, 80);
+
+    if (!user) {
+      socket.emit("event-action-result", {
+        ok: false,
+        message: "Jogador não encontrado. Use o nome exato ou e-mail."
+      });
+      return;
+    }
+
+    const wallet = getWalletByKey(user.key);
+    wallet.gameSneaker += safeAmount;
+
+    emitWalletByKey(user.key);
+
+    socket.emit("event-action-result", {
+      ok: true,
+      message: `${safeAmount} Game Sneaker enviado para ${user.name || user.email}.`
+    });
+
+    io.emit("server-message", {
+      message: `ADM enviou ${safeAmount} Game Sneaker para ${user.name || user.email}. Motivo: ${cleanReason}.`
+    });
+  });
+
   socket.on("event-create", ({ title, game, type, reward, description }) => {
     if (!requireAdmin(socket)) {
       socket.emit("event-action-result", {
@@ -562,7 +668,7 @@ io.on("connection", (socket) => {
     });
 
     io.emit("server-message", {
-      message: `Novo evento aberto: ${cleanTitle}. Recompensa: ${safeReward} Game Sneaker.`
+      message: `Novo evento aberto: ${cleanTitle}. O ADM vai entregar até ${safeReward} Game Sneaker aos vencedores.`
     });
 
     broadcastEvents();
@@ -588,31 +694,27 @@ io.on("connection", (socket) => {
     }
 
     const key = getUserKey(socket);
+    rememberUser(socket, nick);
 
     if (event.participants.has(key)) {
       socket.emit("event-action-result", {
         ok: false,
-        message: "Você já participou desse evento."
+        message: "Você já entrou nesse evento."
       });
       return;
     }
 
     event.participants.add(key);
 
-    const wallet = getWallet(socket);
-    wallet.gameSneaker += Number(event.reward || 0);
-
     const cleanNick = getSocketName(socket, nick);
 
     socket.emit("event-action-result", {
       ok: true,
-      message: `Você ganhou ${event.reward} Game Sneaker.`
+      message: "Você entrou no evento. Se ganhar, o ADM entrega Game Sneaker."
     });
 
-    socket.emit("wallet-update", wallet);
-
     io.emit("server-message", {
-      message: `${cleanNick} participou do evento ${event.title} e ganhou Game Sneaker.`
+      message: `${cleanNick} entrou no evento ${event.title}.`
     });
 
     broadcastEvents();

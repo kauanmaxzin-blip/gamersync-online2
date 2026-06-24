@@ -1913,6 +1913,75 @@
             }
         }
 
+    
+        /* Moeda Game Sneaker - símbolo GS com efeito vermelho */
+        .gs-coin-icon {
+            width: 1.35rem;
+            height: 1.35rem;
+            border-radius: 999px;
+            display: inline-grid;
+            place-items: center;
+            font-size: .55rem;
+            font-weight: 1000;
+            letter-spacing: -.03em;
+            color: #ffffff;
+            background: radial-gradient(circle at 35% 28%, #ff9b9b 0%, #ef4444 30%, #991b1b 72%, #250606 100%);
+            border: 1px solid rgba(248, 113, 113, .8);
+            box-shadow: 0 0 0 2px rgba(220, 38, 38, .16), 0 0 18px rgba(239, 68, 68, .65), inset 0 0 10px rgba(255,255,255,.16);
+            flex: 0 0 auto;
+        }
+
+        .coin-pill {
+            border-color: rgba(239, 68, 68, .5) !important;
+            background: linear-gradient(135deg, rgba(220,38,38,.2), rgba(10,10,10,.96)) !important;
+            color: #fecaca !important;
+            box-shadow: 0 0 0 1px rgba(220,38,38,.15), 0 0 22px rgba(220,38,38,.35), inset 0 0 20px rgba(220,38,38,.08) !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .coin-pill::after {
+            content: "";
+            position: absolute;
+            inset: -40%;
+            background: radial-gradient(circle, rgba(239,68,68,.22), transparent 58%);
+            opacity: .7;
+            pointer-events: none;
+            animation: coinRedGlow 2.4s ease-in-out infinite;
+        }
+
+        .coin-pill > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes coinRedGlow {
+            0%, 100% { transform: scale(.85); opacity: .45; }
+            50% { transform: scale(1.06); opacity: .9; }
+        }
+
+        .coin-repository-panel {
+            border: 1px solid rgba(239, 68, 68, .35);
+            background: radial-gradient(circle at top left, rgba(220,38,38,.16), rgba(10,10,10,.82) 45%, rgba(23,23,23,.9));
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 0 28px rgba(220,38,38,.12);
+        }
+
+        .coin-repo-grid {
+            display: grid;
+            grid-template-columns: 1fr 9rem 1fr;
+            gap: .75rem;
+            align-items: end;
+        }
+
+        @media (max-width: 767px) {
+            .coin-repo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex flex-col">
@@ -2104,12 +2173,12 @@
                     <span class="absolute top-0 right-0 w-2 h-2 bg-red-600 rounded-full"></span>
                 </button>
 
-                <button onclick="openEventsScreen()" class="events-action-btn events-secondary-btn hidden md:inline-flex" title="Eventos">
+                <button onclick="openEventsScreen()" id="header-events-btn" class="events-action-btn events-secondary-btn hidden md:inline-flex" title="Eventos">
                     <i data-lucide="calendar-days" class="w-5 h-5"></i>
                     Eventos
                 </button>
                 <button onclick="openEventsScreen()" id="home-coin-pill" class="coin-pill" title="Game Sneaker">
-                    <span>👟</span>
+                    <span class="gs-coin-icon">GS</span>
                     <span id="coin-balance-header">0</span>
                     <span class="coin-name">Game Sneaker</span>
                 </button>
@@ -2127,11 +2196,11 @@
             <p class="text-neutral-400 mb-6">Encontra a tua equipa perfeita na tua faixa etária.</p>
 
 
-            <div class="events-home-card">
+            <div id="events-home-card" class="events-home-card hidden">
                 <div>
                     <div class="flex items-center gap-2 mb-2">
                         <span class="event-badge event-badge-active">Ao vivo</span>
-                        <span class="coin-pill"><span>👟</span><span id="coin-balance-home">0</span> Game Sneaker</span>
+                        <span class="coin-pill"><span class="gs-coin-icon">GS</span><span id="coin-balance-home">0</span> Game Sneaker</span>
                     </div>
                     <h2 class="text-xl font-bold text-white">Eventos do GamerSync</h2>
                     <p class="text-sm text-neutral-400 mt-1">Participe de eventos de Minecraft, FF e outros jogos para ganhar Game Sneaker.</p>
@@ -2201,7 +2270,7 @@
                 <p class="text-xs text-neutral-400 truncate">Eventos do servidor e do app.</p>
             </div>
             <div class="coin-pill">
-                <span>👟</span>
+                <span class="gs-coin-icon">GS</span>
                 <span id="coin-balance-events">0</span>
             </div>
         </header>
@@ -2274,10 +2343,41 @@
                 </button>
             </div>
 
+
+            <div id="coin-repository-panel" class="coin-repository-panel hidden">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                        <h3 class="font-black text-red-200 text-lg">Repositório de Moedas ADM</h3>
+                        <p class="text-sm text-neutral-400">Dê Game Sneaker para quem ganhou usando nome ou e-mail.</p>
+                    </div>
+                    <span class="coin-pill"><span class="gs-coin-icon">GS</span> ADM</span>
+                </div>
+
+                <div class="coin-repo-grid">
+                    <div>
+                        <label class="block text-sm text-neutral-400 mb-1">Nome do jogador ou e-mail</label>
+                        <input id="coin-target-input" class="event-input" placeholder="Ex: Kauan Maxzin ou email@gmail.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-neutral-400 mb-1">Quantidade</label>
+                        <input id="coin-amount-input" class="event-input" type="number" min="1" max="100000" value="100">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-neutral-400 mb-1">Motivo</label>
+                        <input id="coin-reason-input" class="event-input" placeholder="Ex: ganhou evento FF">
+                    </div>
+                </div>
+
+                <button onclick="adminGiveCoins()" class="events-action-btn mt-3 w-full md:w-auto">
+                    <i data-lucide="badge-dollar-sign" class="w-5 h-5"></i>
+                    Enviar Game Sneaker
+                </button>
+            </div>
+
             <div class="flex items-center justify-between gap-3 mb-3">
                 <div>
                     <h3 class="text-lg font-black text-white">Eventos abertos</h3>
-                    <p class="text-sm text-neutral-400">Participe para ganhar Game Sneaker.</p>
+                    <p class="text-sm text-neutral-400">Veja os eventos abertos pelo ADM.</p>
                 </div>
                 <button onclick="requestEvents()" class="events-action-btn events-secondary-btn">
                     <i data-lucide="refresh-cw" class="w-5 h-5"></i>
@@ -3638,6 +3738,8 @@
             const profileBadge = document.getElementById('profile-admin-badge');
             const adminCard = document.getElementById('admin-login-card');
             const eventCreatePanel = document.getElementById('event-create-panel');
+            const coinRepositoryPanel = document.getElementById('coin-repository-panel');
+            const headerEventsBtn = document.getElementById('header-events-btn');
 
             [headerBadge, profileBadge].forEach((badge) => {
                 if (badge) badge.classList.toggle('active', isAdmin);
@@ -3645,6 +3747,8 @@
 
             if (adminCard) adminCard.classList.toggle('hidden', !isAdmin);
             if (eventCreatePanel) eventCreatePanel.classList.toggle('hidden', !isAdmin);
+            if (coinRepositoryPanel) coinRepositoryPanel.classList.toggle('hidden', !isAdmin);
+            if (headerEventsBtn) headerEventsBtn.classList.toggle('hidden', !isAdmin);
 
             if (window.lucide) lucide.createIcons();
         }
@@ -3900,6 +4004,11 @@
 
             if (count) count.innerText = activeEvents.length;
 
+            const homeCard = document.getElementById('events-home-card');
+            if (homeCard) {
+                homeCard.classList.toggle('hidden', !(isAdmin || activeEvents.length > 0));
+            }
+
             if (safeEvents.length === 0) {
                 list.innerHTML = `
                     <div class="event-card md:col-span-2">
@@ -3931,8 +4040,8 @@
 
                     <div class="flex items-center justify-between gap-3 mt-4 bg-black/40 border border-neutral-800 rounded-xl p-3">
                         <div>
-                            <p class="text-xs text-neutral-500 uppercase tracking-widest font-bold">Recompensa</p>
-                            <p class="text-yellow-200 font-black">👟 ${reward} Game Sneaker</p>
+                            <p class="text-xs text-neutral-500 uppercase tracking-widest font-bold">Recompensa definida</p>
+                            <p class="text-yellow-200 font-black"><span class="gs-coin-icon">GS</span> ${reward} Game Sneaker</p>
                         </div>
                         <div class="text-right">
                             <p class="text-xs text-neutral-500 uppercase tracking-widest font-bold">Participantes</p>
@@ -3944,7 +4053,7 @@
                         ${active ? `
                             <button onclick="joinEvent('${event.id}')" class="events-action-btn ${joined ? 'events-secondary-btn' : ''}">
                                 <i data-lucide="${joined ? 'check-circle' : 'gift'}" class="w-5 h-5"></i>
-                                ${joined ? 'Já participou' : 'Participar e ganhar'}
+                                ${joined ? 'Já participou' : 'Participar'}
                             </button>
                         ` : ''}
                         ${isAdmin && active ? `
@@ -3960,6 +4069,34 @@
             });
 
             if (window.lucide) lucide.createIcons();
+        }
+
+
+        function adminGiveCoins() {
+            if (!isAdmin) {
+                showToast('Só ADM pode mexer no repositório de moedas.', 'error');
+                return;
+            }
+
+            const target = document.getElementById('coin-target-input')?.value || '';
+            const amount = Number(document.getElementById('coin-amount-input')?.value || 0);
+            const reason = document.getElementById('coin-reason-input')?.value || '';
+
+            if (!target.trim()) {
+                showToast('Coloque o nome ou e-mail do jogador.', 'error');
+                return;
+            }
+
+            if (!amount || amount <= 0) {
+                showToast('Coloque uma quantidade válida.', 'error');
+                return;
+            }
+
+            socket.emit('admin-give-coins', {
+                target,
+                amount,
+                reason
+            });
         }
 
         function createEventAsAdmin() {

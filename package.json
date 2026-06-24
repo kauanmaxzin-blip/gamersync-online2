@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "4.0.0",
-  "description": "GamerSync com eventos e Game Sneaker",
+  "version": "4.1.0",
+  "description": "GamerSync com repositório de moedas ADM",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
