@@ -1,12 +1,18 @@
-GamerSync - Modo assistir YouTube
+GamerSync - Eventos e Game Sneaker
 
-Novidade:
-- quando um vídeo do YouTube é colocado na sala, entra em modo assistir
-- o chat some
-- a telona do YouTube fica grande em cima
-- as bolinhas dos jogadores ficam embaixo
-- ficam os controles do vídeo e campo do link
-- ao fechar/minimizar o vídeo, o chat volta
+Novidades:
+- nova aba Eventos
+- moeda Game Sneaker
+- saldo aparece no topo, na aba Eventos e no perfil
+- ADM pode abrir evento
+- ADM pode encerrar evento
+- eventos podem ser de Minecraft, Free Fire/FF, Roblox, Valorant, Fortnite, GTA e outros
+- jogadores participam e ganham Game Sneaker
+- o servidor valida que só ADM cria/encerra evento
+
+Observação:
+As moedas e eventos ficam salvos enquanto o servidor estiver ligado.
+Se o Render reiniciar ou dormir e limpar a memória, pode resetar.
 
 Substitua no GitHub:
 - index.html

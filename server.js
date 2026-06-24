@@ -87,6 +87,65 @@ app.get("/config", (req, res) => {
 });
 
 const rooms = new Map();
+const wallets = new Map();
+const appEvents = new Map();
+
+
+function getUserKey(socket) {
+  const email = String(socket.data?.account?.email || "").toLowerCase();
+  const uid = String(socket.data?.account?.uid || "");
+  return email || uid || socket.id;
+}
+
+function getWallet(socket) {
+  const key = getUserKey(socket);
+  if (!wallets.has(key)) {
+    wallets.set(key, {
+      gameSneaker: 0
+    });
+  }
+  return wallets.get(key);
+}
+
+function emitWallet(socket) {
+  socket.emit("wallet-update", getWallet(socket));
+}
+
+function publicEvent(event, socket = null) {
+  const key = socket ? getUserKey(socket) : "";
+  return {
+    id: event.id,
+    title: event.title,
+    game: event.game,
+    type: event.type,
+    description: event.description,
+    reward: event.reward,
+    status: event.status,
+    createdAt: event.createdAt,
+    createdBy: event.createdBy,
+    participants: event.participants ? event.participants.size : 0,
+    joined: key && event.participants ? event.participants.has(key) : false
+  };
+}
+
+function emitEventsTo(socket) {
+  const list = Array.from(appEvents.values())
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .map((event) => publicEvent(event, socket));
+
+  socket.emit("events-list", list);
+}
+
+function broadcastEvents() {
+  for (const socket of io.sockets.sockets.values()) {
+    emitEventsTo(socket);
+  }
+}
+
+function requireAdmin(socket) {
+  return !!(socket.data && socket.data.isAdmin);
+}
+
 
 function normalizeName(name) {
   return String(name || "").trim();
@@ -150,6 +209,7 @@ function updateAdminStatusFromAccount(socket) {
   if (isAdmin) {
     socket.emit("admin-rooms-list", adminRooms());
   }
+  emitEventsTo(socket);
 }
 
 function emitAdminRooms() {
@@ -418,6 +478,8 @@ io.on("connection", (socket) => {
   socket.data.isAdmin = false;
 
   socket.emit("rooms-list", Array.from(rooms.values()).map(publicRoom));
+  emitWallet(socket);
+  emitEventsTo(socket);
 
   socket.on("register-google-account", async ({ idToken }) => {
     try {
@@ -435,6 +497,8 @@ io.on("connection", (socket) => {
       });
 
       updateAdminStatusFromAccount(socket);
+      emitWallet(socket);
+      emitEventsTo(socket);
       socket.emit("rooms-list", Array.from(rooms.values()).map(publicRoom));
     } catch (error) {
       console.error("Token Firebase inválido:", error.message);
@@ -443,6 +507,146 @@ io.on("connection", (socket) => {
       });
     }
   });
+
+
+  socket.on("wallet-get", () => {
+    emitWallet(socket);
+  });
+
+  socket.on("events-get", () => {
+    emitEventsTo(socket);
+  });
+
+  socket.on("event-create", ({ title, game, type, reward, description }) => {
+    if (!requireAdmin(socket)) {
+      socket.emit("event-action-result", {
+        ok: false,
+        message: "Só ADM pode abrir evento."
+      });
+      return;
+    }
+
+    const cleanTitle = String(title || "").trim().slice(0, 60);
+    const cleanGame = String(game || "Minecraft").trim().slice(0, 30);
+    const cleanType = String(type || "Servidor").trim().slice(0, 20);
+    const cleanDescription = String(description || "").trim().slice(0, 260);
+    const safeReward = Math.max(1, Math.min(10000, Number(reward || 100)));
+
+    if (!cleanTitle) {
+      socket.emit("event-action-result", {
+        ok: false,
+        message: "Coloque um nome para o evento."
+      });
+      return;
+    }
+
+    const id = crypto.randomBytes(8).toString("hex");
+    const creator = socket.data?.account?.email || socket.data?.account?.name || "ADM";
+
+    appEvents.set(id, {
+      id,
+      title: cleanTitle,
+      game: cleanGame,
+      type: cleanType === "App" ? "App" : "Servidor",
+      description: cleanDescription || "Participe do evento para ganhar Game Sneaker.",
+      reward: safeReward,
+      status: "active",
+      createdAt: Date.now(),
+      createdBy: creator,
+      participants: new Set()
+    });
+
+    socket.emit("event-action-result", {
+      ok: true,
+      message: "Evento aberto com sucesso."
+    });
+
+    io.emit("server-message", {
+      message: `Novo evento aberto: ${cleanTitle}. Recompensa: ${safeReward} Game Sneaker.`
+    });
+
+    broadcastEvents();
+  });
+
+  socket.on("event-join", ({ eventId, nick }) => {
+    const event = appEvents.get(String(eventId || ""));
+
+    if (!event) {
+      socket.emit("event-action-result", {
+        ok: false,
+        message: "Esse evento não existe mais."
+      });
+      return;
+    }
+
+    if (event.status !== "active") {
+      socket.emit("event-action-result", {
+        ok: false,
+        message: "Esse evento já foi encerrado."
+      });
+      return;
+    }
+
+    const key = getUserKey(socket);
+
+    if (event.participants.has(key)) {
+      socket.emit("event-action-result", {
+        ok: false,
+        message: "Você já participou desse evento."
+      });
+      return;
+    }
+
+    event.participants.add(key);
+
+    const wallet = getWallet(socket);
+    wallet.gameSneaker += Number(event.reward || 0);
+
+    const cleanNick = getSocketName(socket, nick);
+
+    socket.emit("event-action-result", {
+      ok: true,
+      message: `Você ganhou ${event.reward} Game Sneaker.`
+    });
+
+    socket.emit("wallet-update", wallet);
+
+    io.emit("server-message", {
+      message: `${cleanNick} participou do evento ${event.title} e ganhou Game Sneaker.`
+    });
+
+    broadcastEvents();
+  });
+
+  socket.on("event-close", ({ eventId }) => {
+    if (!requireAdmin(socket)) {
+      socket.emit("event-action-result", {
+        ok: false,
+        message: "Só ADM pode encerrar evento."
+      });
+      return;
+    }
+
+    const event = appEvents.get(String(eventId || ""));
+
+    if (!event) {
+      socket.emit("event-action-result", {
+        ok: false,
+        message: "Esse evento não existe mais."
+      });
+      return;
+    }
+
+    event.status = "closed";
+
+    socket.emit("event-action-result", {
+      ok: true,
+      message: "Evento encerrado."
+    });
+
+    broadcastEvents();
+  });
+
 
   socket.on("get-rooms", () => {
     const list = Array.from(rooms.values()).map(publicRoom);
