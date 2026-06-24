@@ -48,8 +48,8 @@
         }
 
         #screen-group.active {
-            height: 100vh;
-            height: 100dvh;
+            height: calc(100vh - var(--app-safe-top) - var(--app-safe-bottom));
+            height: calc(100dvh - var(--app-safe-top) - var(--app-safe-bottom));
             min-height: 0;
             overflow: hidden;
         }
@@ -1979,6 +1979,92 @@
         @media (max-width: 767px) {
             .coin-repo-grid {
                 grid-template-columns: 1fr;
+            }
+        }
+
+    
+        /* Correção: nada cortado no topo do celular */
+        :root {
+            --app-safe-top: max(env(safe-area-inset-top), 14px);
+            --app-safe-bottom: max(env(safe-area-inset-bottom), 10px);
+        }
+
+        body {
+            padding-top: var(--app-safe-top) !important;
+            padding-bottom: var(--app-safe-bottom) !important;
+            box-sizing: border-box !important;
+        }
+
+        .screen {
+            min-height: calc(100vh - var(--app-safe-top) - var(--app-safe-bottom)) !important;
+            min-height: calc(100dvh - var(--app-safe-top) - var(--app-safe-bottom)) !important;
+        }
+
+        #screen-home,
+        #screen-events,
+        #screen-game-detail,
+        #screen-group,
+        #screen-auth,
+        #screen-login,
+        #screen-create-account {
+            padding-top: 0 !important;
+        }
+
+        #screen-home header,
+        #screen-events header,
+        #screen-game-detail header,
+        .mobile-chat-topbar,
+        .friends-panel-header {
+            padding-top: calc(1rem + env(safe-area-inset-top)) !important;
+        }
+
+        #screen-auth .auth-card,
+        #screen-login .auth-card,
+        #screen-create-account .auth-card {
+            margin-top: calc(1rem + env(safe-area-inset-top)) !important;
+        }
+
+        .players-top-strip {
+            padding-top: 1rem !important;
+        }
+
+        @media (max-width: 767px) {
+            body {
+                overflow: hidden !important;
+            }
+
+            #screen-home main,
+            #screen-events main,
+            #screen-game-detail-content {
+                padding-top: .85rem !important;
+            }
+
+            #screen-home header,
+            #screen-events header,
+            #screen-game-detail header {
+                gap: .65rem !important;
+                align-items: center !important;
+                min-height: calc(4.6rem + env(safe-area-inset-top)) !important;
+            }
+
+            #screen-home header .coin-pill {
+                max-width: 9.3rem !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+
+            .events-screen-header {
+                min-height: calc(4.8rem + env(safe-area-inset-top)) !important;
+            }
+
+            .mobile-chat-topbar {
+                min-height: calc(4.5rem + env(safe-area-inset-top)) !important;
+            }
+
+            .room-modal {
+                max-height: calc(92vh - var(--app-safe-top)) !important;
+                max-height: calc(92dvh - var(--app-safe-top)) !important;
+                margin-top: var(--app-safe-top) !important;
             }
         }
 

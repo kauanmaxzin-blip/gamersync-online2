@@ -1,16 +1,11 @@
-GamerSync - Repositório de Game Sneaker
+GamerSync - Topo sem corte
 
-Mudanças:
-- símbolo da moeda agora é GS com efeito vermelho
-- efeito vermelho ao redor da moeda
-- barra/card de eventos só aparece se tiver evento aberto ou se for ADM
-- painel de criar evento só aparece para ADM
-- repositório de moedas só aparece para ADM
-- ADM pode enviar Game Sneaker por nome do jogador ou e-mail
-- jogador normal não ganha moeda automaticamente ao entrar no evento
-- jogador normal apenas entra no evento
-- ADM entrega a recompensa manualmente para quem ganhar
-- ADM escolhe o jogo do evento: Minecraft, FF, Roblox, Valorant etc.
+Correção:
+- adicionado espaço seguro no topo do celular
+- cabeçalho não fica mais cortado
+- moedas/eventos não colam no topo
+- telas de login, home, eventos, sala e modais ajustadas
+- respeita safe-area de celulares Android/iPhone
 
 Substitua no GitHub:
 - index.html
