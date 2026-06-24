@@ -823,6 +823,44 @@ io.on("connection", (socket) => {
 
 
 
+
+  socket.on("super-emoji-send", ({ roomId, emojiId, nick }) => {
+    const room = rooms.get(roomId);
+
+    if (!room) {
+      socket.emit("super-emoji-result", {
+        ok: false,
+        message: "Essa sala não existe mais."
+      });
+      return;
+    }
+
+    const member = getMember(room, socket.id);
+
+    if (!member) {
+      socket.emit("super-emoji-result", {
+        ok: false,
+        message: "Você precisa estar dentro da sala para mandar Super Emoji."
+      });
+      return;
+    }
+
+    const cleanNick = getSocketName(socket, nick);
+
+    io.to(roomId).emit("super-emoji-play", {
+      emojiId: emojiId || "diamond-cube-01",
+      nick: cleanNick,
+      duration: 7000,
+      createdAt: Date.now()
+    });
+
+    socket.emit("super-emoji-result", {
+      ok: true,
+      message: "Super Emoji enviado."
+    });
+  });
+
+
   socket.on("auto-invite-players", ({ roomId, nick }) => {
     const room = rooms.get(roomId);
 

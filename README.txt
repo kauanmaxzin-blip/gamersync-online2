@@ -1,14 +1,12 @@
-GamerSync - Topo corrigido
+GamerSync - Sistema Super Emoji
 
-Correções:
-- removido o quadrado vermelho cortado no topo
-- aviso de convite só aparece quando tiver convite real
-- cabeçalho mobile reorganizado
-- perfil/logo volta a aparecer sem sumir
-- sino fica clicável e quadrado
-- botão Eventos fica compacto no celular
-- moeda GS fica compacta no celular
-- topo não fica cortado
+Novidades:
+- botão Super dentro da sala
+- primeiro Super Emoji usando a imagem enviada
+- animação gigante na tela
+- duração de 7 segundos
+- todos dentro da sala veem o Super Emoji
+- mensagem de sistema aparece no chat
 
 Substitua no GitHub:
 - index.html

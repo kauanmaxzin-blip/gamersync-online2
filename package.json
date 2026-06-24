@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "4.2.1",
-  "description": "GamerSync topo corrigido com perfil e sino",
+  "version": "4.3.0",
+  "description": "GamerSync com sistema Super Emoji",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
