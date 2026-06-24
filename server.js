@@ -90,6 +90,10 @@ const rooms = new Map();
 const wallets = new Map();
 const appEvents = new Map();
 const knownUsers = new Map();
+const roomInvites = new Map();
+const friendRequests = new Map();
+const inviteMuteUntil = new Map();
+const friendLinks = new Map();
 
 
 function getUserKey(socket) {
@@ -212,6 +216,72 @@ function emitWalletByKey(userKey) {
       socket.emit("wallet-update", getWalletByKey(normalizedKey));
     }
   }
+}
+
+
+
+function getRoomIdForSocket(socketId) {
+  for (const [roomId, room] of rooms.entries()) {
+    if (room.members.some((member) => member.id === socketId)) return roomId;
+  }
+  return "";
+}
+
+function isInviteMuted(socket) {
+  const key = getUserKey(socket);
+  const until = Math.max(
+    Number(socket.data?.inviteMutedUntil || 0),
+    Number(inviteMuteUntil.get(key) || 0)
+  );
+
+  return until > Date.now();
+}
+
+function setInviteMuted(socket, ms = 8 * 60 * 1000) {
+  const until = Date.now() + ms;
+  const key = getUserKey(socket);
+  socket.data.inviteMutedUntil = until;
+  inviteMuteUntil.set(key, until);
+  return until;
+}
+
+function getOnlineCandidateSockets(room, senderSocket) {
+  const roomMemberIds = new Set(room.members.map((member) => member.id));
+
+  const candidates = Array.from(io.sockets.sockets.values())
+    .filter((candidate) => candidate.id !== senderSocket.id)
+    .filter((candidate) => !roomMemberIds.has(candidate.id))
+    .filter((candidate) => !isInviteMuted(candidate))
+    .filter((candidate) => getRoomIdForSocket(candidate.id) !== room.id)
+    .filter((candidate) => candidate.connected);
+
+  return candidates.sort(() => Math.random() - 0.5);
+}
+
+function socketDisplayName(socket, fallback = "Jogador") {
+  return getSocketName(socket, socket.data?.account?.name || fallback);
+}
+
+function findOnlineSocketByName(targetName, senderSocket = null) {
+  const lookup = normalizeLookup(targetName);
+
+  if (!lookup) return null;
+
+  for (const socket of io.sockets.sockets.values()) {
+    if (senderSocket && socket.id === senderSocket.id) continue;
+
+    const account = socket.data?.account || {};
+    const names = [
+      account.email,
+      account.name,
+      socketDisplayName(socket),
+      socket.data?.lastNick
+    ].map(normalizeLookup);
+
+    if (names.includes(lookup)) return socket;
+  }
+
+  return null;
 }
 
 
@@ -345,7 +415,7 @@ function removeMemberFromAllRooms(socketId, skipRoomId = null) {
   }
 }
 
-function joinRoom(socket, { roomId, nick, password }) {
+function joinRoom(socket, { roomId, nick, password, inviteBypass = false }) {
   const room = rooms.get(roomId);
 
   if (!room) {
@@ -355,6 +425,7 @@ function joinRoom(socket, { roomId, nick, password }) {
 
   const cleanNick = getSocketName(socket, nick);
   rememberUser(socket, cleanNick);
+  socket.data.lastNick = cleanNick;
   const alreadyInThisRoom = room.members.some((member) => member.id === socket.id);
 
   if (alreadyInThisRoom) {
@@ -383,7 +454,7 @@ function joinRoom(socket, { roomId, nick, password }) {
     return;
   }
 
-  if (room.type === "private" && room.password !== String(password || "").trim()) {
+  if (room.type === "private" && !inviteBypass && room.password !== String(password || "").trim()) {
     socket.emit("join-error", { message: "Senha da sala incorreta." });
     return;
   }
@@ -545,6 +616,7 @@ io.on("connection", (socket) => {
   console.log("Jogador conectado:", socket.id);
 
   socket.data.isAdmin = false;
+  socket.data.inviteMutedUntil = 0;
 
   socket.emit("rooms-list", Array.from(rooms.values()).map(publicRoom));
   emitWallet(socket);
@@ -747,6 +819,241 @@ io.on("connection", (socket) => {
     });
 
     broadcastEvents();
+  });
+
+
+
+  socket.on("auto-invite-players", ({ roomId, nick }) => {
+    const room = rooms.get(roomId);
+
+    if (!room) {
+      socket.emit("invite-action-result", {
+        ok: false,
+        message: "Essa sala não existe mais."
+      });
+      return;
+    }
+
+    const member = getMember(room, socket.id);
+
+    if (!member) {
+      socket.emit("invite-action-result", {
+        ok: false,
+        message: "Você precisa estar dentro da sala."
+      });
+      return;
+    }
+
+    if (!member.host) {
+      socket.emit("invite-action-result", {
+        ok: false,
+        message: "Só o dono da sala pode procurar jogadores."
+      });
+      return;
+    }
+
+    if (room.members.length >= room.maxPlayers) {
+      socket.emit("invite-action-result", {
+        ok: false,
+        message: "A sala já está cheia."
+      });
+      return;
+    }
+
+    const freeSlots = Math.max(0, room.maxPlayers - room.members.length);
+    const candidates = getOnlineCandidateSockets(room, socket).slice(0, Math.min(5, freeSlots || 5));
+    const fromNick = getSocketName(socket, nick);
+
+    if (candidates.length === 0) {
+      socket.emit("invite-action-result", {
+        ok: false,
+        message: "Não encontrei jogadores online disponíveis agora."
+      });
+      return;
+    }
+
+    for (const targetSocket of candidates) {
+      const inviteId = crypto.randomBytes(8).toString("hex");
+      roomInvites.set(inviteId, {
+        id: inviteId,
+        roomId,
+        fromSocketId: socket.id,
+        targetSocketId: targetSocket.id,
+        createdAt: Date.now()
+      });
+
+      targetSocket.emit("room-invite", {
+        inviteId,
+        roomId,
+        roomName: room.name,
+        game: room.game,
+        type: room.type,
+        fromNick
+      });
+    }
+
+    socket.emit("invite-action-result", {
+      ok: true,
+      message: `Convite enviado para ${candidates.length} jogador(es).`
+    });
+  });
+
+  socket.on("room-invite-answer", ({ inviteId, answer, nick }) => {
+    const invite = roomInvites.get(String(inviteId || ""));
+
+    if (!invite || invite.targetSocketId !== socket.id) {
+      socket.emit("invite-action-result", {
+        ok: false,
+        message: "Esse convite expirou."
+      });
+      return;
+    }
+
+    const room = rooms.get(invite.roomId);
+
+    if (answer === "mute") {
+      setInviteMuted(socket);
+      roomInvites.delete(invite.id);
+      socket.emit("invite-action-result", {
+        ok: true,
+        message: "Ok. Não vou te mandar convites por 8 minutos."
+      });
+      return;
+    }
+
+    if (answer === "no") {
+      roomInvites.delete(invite.id);
+      socket.emit("invite-action-result", {
+        ok: true,
+        message: "Convite recusado."
+      });
+
+      const sender = io.sockets.sockets.get(invite.fromSocketId);
+      if (sender) {
+        sender.emit("notification-info", {
+          ok: true,
+          title: "Convite recusado",
+          message: `${getSocketName(socket, nick)} recusou o convite.`
+        });
+      }
+      return;
+    }
+
+    if (!room) {
+      roomInvites.delete(invite.id);
+      socket.emit("invite-action-result", {
+        ok: false,
+        message: "Essa sala não existe mais."
+      });
+      return;
+    }
+
+    if (room.members.length >= room.maxPlayers) {
+      roomInvites.delete(invite.id);
+      socket.emit("invite-action-result", {
+        ok: false,
+        message: "Essa sala já ficou cheia."
+      });
+      return;
+    }
+
+    roomInvites.delete(invite.id);
+
+    joinRoom(socket, {
+      roomId: invite.roomId,
+      nick: nick || "Jogador",
+      inviteBypass: true
+    });
+
+    const sender = io.sockets.sockets.get(invite.fromSocketId);
+    if (sender) {
+      sender.emit("notification-info", {
+        ok: true,
+        title: "Convite aceito",
+        message: `${getSocketName(socket, nick)} aceitou o convite e entrou na sala.`
+      });
+    }
+  });
+
+  socket.on("friend-request-send", ({ targetName, nick }) => {
+    const targetSocket = findOnlineSocketByName(targetName, socket);
+    const fromNick = getSocketName(socket, nick);
+
+    if (!targetSocket) {
+      socket.emit("friend-result", {
+        ok: false,
+        message: "Não encontrei esse jogador online para enviar amizade."
+      });
+      return;
+    }
+
+    const requestId = crypto.randomBytes(8).toString("hex");
+
+    friendRequests.set(requestId, {
+      id: requestId,
+      fromSocketId: socket.id,
+      targetSocketId: targetSocket.id,
+      fromNick,
+      createdAt: Date.now()
+    });
+
+    targetSocket.emit("friend-request", {
+      requestId,
+      fromNick
+    });
+
+    socket.emit("friend-result", {
+      ok: true,
+      message: `Pedido de amizade enviado para ${socketDisplayName(targetSocket)}.`
+    });
+  });
+
+  socket.on("friend-request-answer", ({ requestId, accepted, nick }) => {
+    const request = friendRequests.get(String(requestId || ""));
+
+    if (!request || request.targetSocketId !== socket.id) {
+      socket.emit("friend-result", {
+        ok: false,
+        message: "Esse pedido de amizade expirou."
+      });
+      return;
+    }
+
+    friendRequests.delete(request.id);
+
+    const sender = io.sockets.sockets.get(request.fromSocketId);
+    const targetName = getSocketName(socket, nick);
+
+    if (accepted) {
+      const a = getUserKey(socket);
+      const b = sender ? getUserKey(sender) : request.fromSocketId;
+      friendLinks.set(`${a}:${b}`, true);
+      friendLinks.set(`${b}:${a}`, true);
+
+      socket.emit("friend-result", {
+        ok: true,
+        message: "Amizade aceita."
+      });
+
+      if (sender) {
+        sender.emit("friend-result", {
+          ok: true,
+          message: `${targetName} aceitou seu pedido de amizade.`
+        });
+      }
+    } else {
+      socket.emit("friend-result", {
+        ok: true,
+        message: "Pedido de amizade recusado."
+      });
+
+      if (sender) {
+        sender.emit("friend-result", {
+          ok: false,
+          message: `${targetName} recusou seu pedido de amizade.`
+        });
+      }
+    }
   });
 
 
@@ -1091,6 +1398,19 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("Jogador desconectou:", socket.id);
+
+    for (const [inviteId, invite] of roomInvites.entries()) {
+      if (invite.fromSocketId === socket.id || invite.targetSocketId === socket.id) {
+        roomInvites.delete(inviteId);
+      }
+    }
+
+    for (const [requestId, request] of friendRequests.entries()) {
+      if (request.fromSocketId === socket.id || request.targetSocketId === socket.id) {
+        friendRequests.delete(requestId);
+      }
+    }
+
     removeMemberFromAllRooms(socket.id);
   });
 });

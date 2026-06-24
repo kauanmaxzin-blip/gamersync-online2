@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "4.1.1",
-  "description": "GamerSync com correção de topo sem corte",
+  "version": "4.2.0",
+  "description": "GamerSync com convites automáticos e sino funcional",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

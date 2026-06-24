@@ -2068,12 +2068,232 @@
             }
         }
 
+    
+        /* Sistema de convites, sino e amizade */
+        .notification-bell-btn {
+            position: relative;
+        }
+
+        .notification-count {
+            position: absolute;
+            top: -0.35rem;
+            right: -0.35rem;
+            min-width: 1.05rem;
+            height: 1.05rem;
+            border-radius: 999px;
+            background: #dc2626;
+            color: #fff;
+            border: 2px solid #050505;
+            font-size: .62rem;
+            font-weight: 900;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0 .25rem;
+            box-shadow: 0 0 16px rgba(220,38,38,.55);
+        }
+
+        .notification-count.active {
+            display: flex;
+        }
+
+        .top-invite-banner {
+            position: fixed;
+            left: 50%;
+            top: calc(var(--app-safe-top, 12px) + .65rem);
+            transform: translate(-50%, -130%);
+            width: min(94vw, 34rem);
+            z-index: 999999;
+            border: 1px solid rgba(239,68,68,.55);
+            background: linear-gradient(135deg, rgba(15,15,15,.98), rgba(127,29,29,.94));
+            color: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 22px 65px rgba(0,0,0,.72), 0 0 28px rgba(220,38,38,.32);
+            padding: .9rem;
+            transition: transform .25s ease;
+        }
+
+        .top-invite-banner.active {
+            transform: translate(-50%, 0);
+        }
+
+        .top-invite-title {
+            font-size: .92rem;
+            font-weight: 950;
+            line-height: 1.2;
+        }
+
+        .top-invite-text {
+            margin-top: .25rem;
+            font-size: .78rem;
+            color: #fecaca;
+            line-height: 1.35;
+        }
+
+        .top-invite-actions {
+            display: flex;
+            gap: .45rem;
+            flex-wrap: wrap;
+            margin-top: .75rem;
+        }
+
+        .top-invite-btn {
+            border-radius: .8rem;
+            min-height: 2.35rem;
+            padding: .55rem .75rem;
+            font-weight: 900;
+            color: #fff;
+            background: #171717;
+            border: 1px solid #3f3f46;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .35rem;
+        }
+
+        .top-invite-btn.yes {
+            background: #16a34a;
+            border-color: #22c55e;
+        }
+
+        .top-invite-btn.no {
+            background: #27272a;
+            border-color: #52525b;
+        }
+
+        .top-invite-btn.mute {
+            background: #7f1d1d;
+            border-color: #ef4444;
+        }
+
+        .notification-panel {
+            position: fixed;
+            right: .75rem;
+            top: calc(var(--app-safe-top, 12px) + 4.6rem);
+            width: min(92vw, 23rem);
+            max-height: min(70vh, 32rem);
+            overflow-y: auto;
+            z-index: 999998;
+            display: none;
+            background: rgba(9,9,11,.98);
+            border: 1px solid rgba(63,63,70,.95);
+            border-radius: 1rem;
+            box-shadow: 0 24px 70px rgba(0,0,0,.74);
+            padding: .85rem;
+        }
+
+        .notification-panel.active {
+            display: block;
+        }
+
+        .notification-item {
+            border: 1px solid rgba(63,63,70,.9);
+            background: rgba(23,23,23,.9);
+            border-radius: .9rem;
+            padding: .75rem;
+            margin-bottom: .55rem;
+        }
+
+        .notification-item.unread {
+            border-color: rgba(220,38,38,.48);
+            background: linear-gradient(135deg, rgba(220,38,38,.12), rgba(23,23,23,.92));
+        }
+
+        .notification-item-title {
+            color: #fff;
+            font-weight: 900;
+            font-size: .88rem;
+        }
+
+        .notification-item-text {
+            color: #a3a3a3;
+            font-size: .76rem;
+            margin-top: .2rem;
+        }
+
+        .notification-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .4rem;
+            margin-top: .6rem;
+        }
+
+        .notification-small-btn {
+            min-height: 2rem;
+            border-radius: .65rem;
+            padding: .42rem .62rem;
+            font-size: .75rem;
+            font-weight: 900;
+            color: #fff;
+            border: 1px solid #3f3f46;
+            background: #171717;
+        }
+
+        .notification-small-btn.primary {
+            background: #dc2626;
+            border-color: #ef4444;
+        }
+
+        .notification-small-btn.good {
+            background: #16a34a;
+            border-color: #22c55e;
+        }
+
+        .find-players-active {
+            background: #dc2626 !important;
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 24px rgba(220,38,38,.35);
+        }
+
+        @media (max-width: 767px) {
+            .top-invite-banner {
+                top: calc(var(--app-safe-top, 12px) + .35rem);
+                padding: .78rem;
+            }
+
+            .top-invite-actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .top-invite-btn.mute {
+                grid-column: 1 / -1;
+            }
+
+            .notification-panel {
+                left: .75rem;
+                right: .75rem;
+                width: auto;
+                top: calc(var(--app-safe-top, 12px) + 4.9rem);
+            }
+        }
+
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex flex-col">
 
     <!-- Notificações Toast -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <div id="top-invite-banner" class="top-invite-banner" aria-live="polite"></div>
+    <div id="notification-panel" class="notification-panel">
+        <div class="flex items-center justify-between gap-3 mb-3">
+            <div>
+                <h3 class="text-white font-black">Notificações</h3>
+                <p class="text-xs text-neutral-400">Convites de sala e amizade.</p>
+            </div>
+            <button onclick="toggleNotificationPanel(false)" class="notification-small-btn" title="Fechar">
+                Fechar
+            </button>
+        </div>
+        <div id="notification-list">
+            <div class="notification-item">
+                <p class="notification-item-title">Nada por enquanto</p>
+                <p class="notification-item-text">Convites e amizades vão aparecer aqui.</p>
+            </div>
+        </div>
+    </div>
+
 
     <!-- TELA 1: LOGIN E BOAS VINDAS -->
     <div id="screen-login" class="screen active h-full w-full flex-col items-center justify-center p-6 relative">
@@ -2254,9 +2474,9 @@
                 <h1 class="text-xl font-bold">GamerSync</h1>
             </div>
             <div class="flex items-center gap-4">
-                <button class="text-neutral-400 hover:text-white transition relative">
+                <button onclick="toggleNotificationPanel()" id="notification-bell-btn" class="notification-bell-btn text-neutral-400 hover:text-white transition" title="Convites e amizades">
                     <i data-lucide="bell" class="w-6 h-6"></i>
-                    <span class="absolute top-0 right-0 w-2 h-2 bg-red-600 rounded-full"></span>
+                    <span id="notification-count" class="notification-count">0</span>
                 </button>
 
                 <button onclick="openEventsScreen()" id="header-events-btn" class="events-action-btn events-secondary-btn hidden md:inline-flex" title="Eventos">
@@ -2765,6 +2985,12 @@
                         <span>Eventos</span>
                     </button>
 
+                    <button type="button" onclick="findRandomPlayers()" id="find-players-btn" class="chat-action-btn" title="Procurar jogadores aleatórios">
+                        <i data-lucide="radar" class="w-5 h-5"></i>
+                        <span>Procurar</span>
+                    </button>
+
+
 
                     <button type="button" onclick="toggleYouTubeWatch()" id="youtube-watch-btn" class="chat-action-btn" title="Assistir YouTube junto">
                         <i data-lucide="youtube" class="w-5 h-5"></i>
@@ -2929,6 +3155,10 @@
         let selectedRoomName = '';
         let myNick = localStorage.getItem('gamersync_nick') || 'Jogador' + Math.floor(Math.random() * 9999);
 
+        let notifications = [];
+        let currentTopNotification = null;
+
+
         let youtubePlayer = null;
         let youtubeApiReady = false;
         let youtubePlayerReady = false;
@@ -2961,6 +3191,71 @@
         socket.on('room-created', (room) => {
             closeRoomModal();
             enterRealRoom(room.id, '', room);
+        });
+
+
+        socket.on('notification-info', (data) => {
+            addNotification({
+                id: data.id || `info-${Date.now()}`,
+                type: data.type || 'info',
+                title: data.title || 'Notificação',
+                text: data.text || data.message || '',
+                roomId: data.roomId || '',
+                roomName: data.roomName || '',
+                game: data.game || '',
+                from: data.from || '',
+                unread: true
+            });
+            showToast(data.message || data.text || 'Nova notificação.', data.ok === false ? 'error' : 'info');
+        });
+
+        socket.on('room-invite', (data) => {
+            const notification = {
+                id: data.inviteId,
+                type: 'room-invite',
+                title: 'Convite para sala',
+                text: `${data.fromNick || 'Um jogador'} te chamou para entrar em ${data.roomName || 'uma sala'} (${data.game || 'jogo'}).`,
+                roomId: data.roomId,
+                roomName: data.roomName,
+                game: data.game,
+                from: data.fromNick,
+                unread: true
+            };
+
+            addNotification(notification);
+            showTopInvite(notification);
+        });
+
+        socket.on('friend-request', (data) => {
+            const notification = {
+                id: data.requestId,
+                type: 'friend-request',
+                title: 'Pedido de amizade',
+                text: `${data.fromNick || 'Um jogador'} quer ser seu amigo.`,
+                from: data.fromNick,
+                unread: true
+            };
+
+            addNotification(notification);
+            showTopInvite(notification);
+        });
+
+        socket.on('friend-result', (data) => {
+            addNotification({
+                id: data.id || `friend-result-${Date.now()}`,
+                type: 'friend-result',
+                title: 'Amizade',
+                text: data.message || '',
+                unread: true
+            });
+            showToast(data.message || 'Pedido de amizade atualizado.', data.ok ? 'success' : 'info');
+        });
+
+        socket.on('invite-action-result', (data) => {
+            showToast(data.message || 'Convite atualizado.', data.ok ? 'success' : 'info');
+
+            const btn = document.getElementById('find-players-btn');
+            if (btn) btn.classList.remove('find-players-active');
         });
 
         socket.on('join-error', (data) => {
@@ -4223,6 +4518,207 @@
         }
 
 
+
+        // ===============================
+        // SISTEMA DE SINO, CONVITES E AMIZADE
+        // ===============================
+        function addNotification(notification) {
+            if (!notification || !notification.id) return;
+
+            const existsIndex = notifications.findIndex((item) => item.id === notification.id);
+            if (existsIndex >= 0) {
+                notifications[existsIndex] = { ...notifications[existsIndex], ...notification };
+            } else {
+                notifications.unshift(notification);
+            }
+
+            notifications = notifications.slice(0, 30);
+            renderNotifications();
+        }
+
+        function removeNotification(notificationId) {
+            notifications = notifications.filter((item) => item.id !== notificationId);
+            if (currentTopNotification && currentTopNotification.id === notificationId) {
+                hideTopInvite();
+            }
+            renderNotifications();
+        }
+
+        function renderNotifications() {
+            const countEl = document.getElementById('notification-count');
+            const list = document.getElementById('notification-list');
+            const unreadCount = notifications.filter((item) => item.unread).length;
+
+            if (countEl) {
+                countEl.innerText = unreadCount > 9 ? '9+' : unreadCount;
+                countEl.classList.toggle('active', unreadCount > 0);
+            }
+
+            if (!list) return;
+
+            if (notifications.length === 0) {
+                list.innerHTML = `
+                    <div class="notification-item">
+                        <p class="notification-item-title">Nada por enquanto</p>
+                        <p class="notification-item-text">Convites e amizades vão aparecer aqui.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = '';
+
+            notifications.forEach((item) => {
+                const row = document.createElement('div');
+                row.className = `notification-item ${item.unread ? 'unread' : ''}`;
+
+                let actions = '';
+
+                if (item.type === 'room-invite') {
+                    actions = `
+                        <button onclick="acceptRoomInvite('${item.id}')" class="notification-small-btn good">Sim</button>
+                        <button onclick="declineRoomInvite('${item.id}')" class="notification-small-btn">Não</button>
+                        <button onclick="muteRoomInvites('${item.id}')" class="notification-small-btn primary">Não mandar por 8 min</button>
+                    `;
+                } else if (item.type === 'friend-request') {
+                    actions = `
+                        <button onclick="answerFriendRequest('${item.id}', true)" class="notification-small-btn good">Aceitar</button>
+                        <button onclick="answerFriendRequest('${item.id}', false)" class="notification-small-btn">Recusar</button>
+                    `;
+                }
+
+                row.innerHTML = `
+                    <p class="notification-item-title">${escapeHTML(item.title || 'Notificação')}</p>
+                    <p class="notification-item-text">${escapeHTML(item.text || '')}</p>
+                    ${actions ? `<div class="notification-actions">${actions}</div>` : ''}
+                `;
+
+                list.appendChild(row);
+            });
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function toggleNotificationPanel(forceState = null) {
+            const panel = document.getElementById('notification-panel');
+            if (!panel) return;
+
+            if (forceState === null) panel.classList.toggle('active');
+            else panel.classList.toggle('active', !!forceState);
+
+            if (panel.classList.contains('active')) {
+                notifications = notifications.map((item) => ({ ...item, unread: false }));
+                renderNotifications();
+            }
+        }
+
+        function showTopInvite(notification) {
+            const banner = document.getElementById('top-invite-banner');
+            if (!banner || !notification) return;
+
+            currentTopNotification = notification;
+
+            let actions = '';
+
+            if (notification.type === 'room-invite') {
+                actions = `
+                    <button onclick="acceptRoomInvite('${notification.id}')" class="top-invite-btn yes">Sim</button>
+                    <button onclick="declineRoomInvite('${notification.id}')" class="top-invite-btn no">Não</button>
+                    <button onclick="muteRoomInvites('${notification.id}')" class="top-invite-btn mute">Não mandar por 8 min</button>
+                `;
+            } else if (notification.type === 'friend-request') {
+                actions = `
+                    <button onclick="answerFriendRequest('${notification.id}', true)" class="top-invite-btn yes">Aceitar</button>
+                    <button onclick="answerFriendRequest('${notification.id}', false)" class="top-invite-btn no">Recusar</button>
+                `;
+            }
+
+            banner.innerHTML = `
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="top-invite-title">${escapeHTML(notification.title || 'Convite')}</p>
+                        <p class="top-invite-text">${escapeHTML(notification.text || '')}</p>
+                    </div>
+                    <button onclick="hideTopInvite()" class="top-invite-btn no" style="min-height:2rem;padding:.35rem .55rem;">×</button>
+                </div>
+                <div class="top-invite-actions">${actions}</div>
+            `;
+
+            banner.classList.add('active');
+
+            if (window.lucide) lucide.createIcons();
+
+            setTimeout(() => {
+                if (currentTopNotification && currentTopNotification.id === notification.id) {
+                    hideTopInvite();
+                }
+            }, 15000);
+        }
+
+        function hideTopInvite() {
+            const banner = document.getElementById('top-invite-banner');
+            if (banner) banner.classList.remove('active');
+            currentTopNotification = null;
+        }
+
+        function findRandomPlayers() {
+            if (!currentRoomId) {
+                showToast('Entre ou crie uma sala primeiro.', 'error');
+                return;
+            }
+
+            const me = roomMembersCache.find((member) => member.id === socket.id);
+            if (me && !me.host) {
+                showToast('Só o dono da sala pode procurar jogadores.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('find-players-btn');
+            if (btn) btn.classList.add('find-players-active');
+
+            socket.emit('auto-invite-players', {
+                roomId: currentRoomId,
+                nick: myNick
+            });
+        }
+
+        function acceptRoomInvite(inviteId) {
+            socket.emit('room-invite-answer', {
+                inviteId,
+                answer: 'yes',
+                nick: myNick
+            });
+            removeNotification(inviteId);
+        }
+
+        function declineRoomInvite(inviteId) {
+            socket.emit('room-invite-answer', {
+                inviteId,
+                answer: 'no',
+                nick: myNick
+            });
+            removeNotification(inviteId);
+        }
+
+        function muteRoomInvites(inviteId) {
+            socket.emit('room-invite-answer', {
+                inviteId,
+                answer: 'mute',
+                nick: myNick
+            });
+            removeNotification(inviteId);
+        }
+
+        function answerFriendRequest(requestId, accepted) {
+            socket.emit('friend-request-answer', {
+                requestId,
+                accepted: !!accepted,
+                nick: myNick
+            });
+            removeNotification(requestId);
+        }
+
+
         function goToScreen(screenId) {
             closeFriendsPanel();
 
@@ -4292,7 +4788,11 @@
 
         // Sistema de adicionar amigos
         function addFriend(name) {
-            showToast(`Pedido de amizade enviado para ${name}!`, 'success');
+            socket.emit('friend-request-send', {
+                targetName: name,
+                nick: myNick
+            });
+            showToast(`Pedido de amizade enviado para ${name}.`, 'success');
         }
 
 
