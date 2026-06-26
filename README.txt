@@ -1,12 +1,14 @@
-GamerSync - Sistema Super Emoji
+GamerSync - Super Emoji Roleta Minecraft
 
-Novidades:
-- botão Super dentro da sala
-- primeiro Super Emoji usando a imagem enviada
-- animação gigante na tela
-- duração de 7 segundos
-- todos dentro da sala veem o Super Emoji
-- mensagem de sistema aparece no chat
+Correções e novidades:
+- Super Emoji agora está sem fundo quadriculado
+- imagem do emoji com fundo transparente
+- ao mandar, aparece uma roleta estilo Minecraft
+- roleta gira com blocos e brilho
+- animação dura 7 segundos
+- todos da sala veem a animação
+- botões laterais do chat no celular foram reorganizados
+- botões ficaram mais baixos e visíveis
 
 Substitua no GitHub:
 - index.html

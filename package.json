@@ -1,7 +1,7 @@
 {
   "name": "gamersync-online",
-  "version": "4.3.0",
-  "description": "GamerSync com sistema Super Emoji",
+  "version": "4.3.1",
+  "description": "GamerSync Super Emoji com roleta Minecraft",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
